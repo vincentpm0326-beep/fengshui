@@ -13,6 +13,9 @@ const path      = require('path');
 const crypto    = require('crypto');
 const app       = express();
 
+// ═══ 信任 Nginx 反向代理（修复 X-Forwarded-For 限流问题） ═══
+app.set('trust proxy', 1);
+
 // ═══ 安全：内部 API 令牌（防止外部直接调用接口） ═══
 // 生产环境请在环境变量中设置 INTERNAL_TOKEN，否则每次重启会随机生成（开发用）
 const INTERNAL_TOKEN = process.env.INTERNAL_TOKEN || crypto.randomBytes(32).toString('hex');
@@ -26,6 +29,8 @@ const ALLOWED_ORIGINS = [
   'https://www.aicopy.me',
   'http://localhost:3366',
   'http://127.0.0.1:3366',
+  'http://47.237.74.1',
+  `http://47.237.74.1:80`,
 ];
 // 临时穿透域名（trycloudflare.com / ngrok 等）
 const ALLOWED_ORIGIN_PATTERNS = [
