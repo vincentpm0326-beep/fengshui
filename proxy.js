@@ -35,7 +35,8 @@ const ALLOWED_ORIGIN_PATTERNS = [
 ];
 app.use(cors({
   origin: function(origin, cb){
-    if(!origin && process.env.NODE_ENV !== 'production') return cb(null, true);
+    // 无 origin（直接IP访问、服务器内部调用）全部允许
+    if(!origin) return cb(null, true);
     if(ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
     if(ALLOWED_ORIGIN_PATTERNS.some(p => p.test(origin))) return cb(null, true);
     cb(new Error('CORS 拒绝：不在白名单'));
