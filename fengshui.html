@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cyber Metaphysics Architect</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#C9A84C;--gdim:#7A5E2A;--crim:#8B1A1A;--ink:#0A0A0F;--ink2:#12121A;--ink3:#1A1A26;--ink4:#22223A;--tp:#F0E8D0;--ts:#9A8A6A;--td:#5A4A3A;--b:rgba(201,168,76,0.2);--bs:rgba(201,168,76,0.45)}
+body{background:var(--ink);color:var(--tp);font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;font-size:14px;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(139,26,26,0.14),transparent 55%);pointer-events:none;z-index:0}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.95);backdrop-filter:blur(8px);flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.logo-cn{font-size:15px;color:var(--gold);letter-spacing:0.18em;font-weight:600}
+.logo-sub{font-size:10px;color:var(--ts);letter-spacing:0.1em;margin-top:1px}
+.tabs{display:flex;gap:3px;flex-wrap:wrap}
+.tab{padding:6px 12px;font-size:12px;color:var(--ts);border:0.5px solid transparent;border-radius:4px;cursor:pointer;background:none;font-family:inherit;transition:all 0.18s}
+.tab:hover{color:var(--gold);border-color:var(--b)}
+.tab.on{color:var(--gold);border-color:var(--bs);background:rgba(201,168,76,0.07)}
+.nbadge{background:var(--crim);color:#ffd0d0;font-size:10px;padding:3px 10px;border-radius:10px}
+
+/* PAGES */
+.page{display:none;padding:20px;max-width:820px;margin:0 auto;position:relative;z-index:1}
+.page.on{display:block;animation:fi .28s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* COMMON */
+.card{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:12px}
+.stitle{font-size:11px;color:var(--ts);letter-spacing:0.14em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.stitle::after{content:'';flex:1;height:0.5px;background:var(--b)}
+.h1{font-size:18px;font-weight:600;color:var(--gold);letter-spacing:0.1em;margin-bottom:4px}
+.h2{font-size:12px;color:var(--ts);margin-bottom:16px}
+.pill{padding:4px 11px;border-radius:20px;font-size:11px;display:inline-block;margin:2px}
+.pg{background:rgba(201,168,76,0.12);color:var(--gold);border:0.5px solid var(--gdim)}
+.pt{background:rgba(30,120,100,0.15);color:#7AD4C0;border:0.5px solid rgba(30,120,100,0.4)}
+.pr{background:rgba(139,26,26,0.2);color:#E08080;border:0.5px solid rgba(139,26,26,0.5)}
+.pw{background:rgba(201,168,76,0.1);color:#E8C96A;border:0.5px solid rgba(201,168,76,0.3)}
+.dot{width:6px;height:6px;border-radius:50%;margin-top:7px;flex-shrink:0}
+.dg{background:#4CAF76}.dw{background:var(--gold)}.db{background:#B22222}
+.frow{display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;padding:10px;background:var(--ink3);border-radius:7px;border:0.5px solid var(--b)}
+.frow:last-child{margin-bottom:0}
+.ft{font-size:13px;color:var(--tp);line-height:1.75;font-weight:500}
+.fs{font-size:12px;color:var(--ts);margin-top:5px;line-height:1.7;padding-left:8px;border-left:2px solid var(--gdim)}
+.aibox{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-top:12px}
+.ailbl{font-size:10px;color:var(--gdim);letter-spacing:0.14em;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-weight:600}
+.aidot{width:5px;height:5px;background:var(--gold);border-radius:50%;animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+.aitxt{font-size:13px;color:var(--tp);line-height:2}
+.errbox{background:rgba(139,26,26,.15);border:0.5px solid rgba(178,34,34,.4);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#E09090;line-height:1.6;display:none}
+.errbox.on{display:block}
+.loading{text-align:center;padding:40px 20px;color:var(--ts);font-size:13px;display:none}
+.loading.on{display:block}
+.spin{width:36px;height:36px;border:2px solid var(--b);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-sub{font-size:11px;color:var(--td);margin-top:6px}
+
+/* BUTTONS */
+.btn-red{width:100%;padding:13px;background:linear-gradient(135deg,var(--crim),#6B0000);border:0.5px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-size:14px;letter-spacing:0.1em;cursor:pointer;font-family:inherit;font-weight:600;margin-bottom:13px;transition:all 0.18s}
+.btn-red:hover{filter:brightness(1.2);transform:translateY(-1px)}
+.btn-red:disabled{opacity:0.38;cursor:not-allowed;transform:none;filter:none}
+.btn-out{width:100%;padding:12px;background:none;border:0.5px solid var(--bs);border-radius:8px;color:var(--gold);font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;margin-bottom:13px;transition:all 0.18s}
+.btn-out:hover{background:rgba(201,168,76,0.08)}
+.btn-sm{padding:7px 16px;background:none;border:0.5px solid var(--bs);border-radius:6px;color:var(--gold);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.18s;font-weight:600}
+.btn-sm:hover{background:rgba(201,168,76,0.08)}
+.btn-ghost{padding:6px 14px;background:none;border:0.5px solid var(--b);border-radius:6px;color:var(--ts);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.18s}
+.btn-ghost:hover{border-color:var(--bs);color:var(--gold)}
+
+/* INPUT */
+.form-ta{width:100%;background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:13px;color:var(--tp);font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.8;transition:border-color .2s;margin-bottom:8px}
+.form-ta:focus{border-color:var(--bs)}
+.char-count{font-size:11px;color:var(--td);text-align:right;margin-bottom:10px}
+.char-count.warn{color:var(--gold)}
+
+/* GUIDE CHIPS */
+.guide-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px}
+.gchip{padding:5px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer;transition:all .18s}
+.gchip:hover{border-color:var(--bs);color:var(--gold)}
+
+/* HOME */
+.hero{text-align:center;padding:28px 0 36px}
+.hero-g{font-size:52px;margin-bottom:10px}
+.hero-t{font-size:26px;font-weight:700;color:var(--gold);letter-spacing:0.14em;margin-bottom:5px}
+.hero-s{font-size:12px;color:var(--ts);letter-spacing:0.18em;margin-bottom:24px}
+.divider{width:70px;height:0.5px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 24px}
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:18px}
+.mod{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:16px 12px;cursor:pointer;text-align:center;position:relative;transition:all 0.22s}
+.mod:hover{border-color:var(--bs);transform:translateY(-2px)}
+.mod.feat{border-color:var(--gdim)}
+.mod-icon{font-size:24px;display:block;margin-bottom:8px}
+.mod-name{display:block;font-size:13px;color:var(--gold);letter-spacing:0.07em;margin-bottom:3px;font-weight:600}
+.mod-desc{font-size:11px;color:var(--ts);line-height:1.5}
+.mbadge{position:absolute;top:8px;right:8px;background:rgba(139,26,26,0.65);color:#FFB0B0;font-size:9px;padding:2px 6px;border-radius:3px}
+.daily{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.dday{font-family:'Cinzel',serif;font-size:34px;font-weight:700;color:var(--gold);line-height:1}
+.dmon{font-size:10px;color:var(--ts);margin-top:2px}
+.ddiv{width:0.5px;height:44px;background:var(--bs);flex-shrink:0}
+.dlbl{font-size:10px;color:var(--ts);margin-bottom:6px}
+
+/* ANALYZER */
+.step-flow{display:flex;align-items:center;margin-bottom:20px}
+.step-item{flex:1;text-align:center;position:relative}
+.step-item::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--gdim);font-size:14px}
+.step-item:last-child::after{display:none}
+.step-num{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--b);background:var(--ink3);margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--td);transition:all .3s}
+.step-num.done{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:600}
+.step-num.act{border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.15)}
+.step-lbl{font-size:10px;color:var(--td)}
+.step-item.done .step-lbl,.step-item.act .step-lbl{color:var(--ts)}
+.cfg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.cfgc{background:var(--ink2);border:0.5px solid var(--b);border-radius:8px;padding:11px}
+.cfgl{font-size:10px;color:var(--ts);font-weight:600;letter-spacing:0.1em;margin-bottom:7px}
+.cfgs{width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:7px 9px;color:var(--tp);font-size:12px;font-family:inherit;outline:none}
+.prompt-section{display:none}
+.prompt-section.show{display:block;animation:fi .3s ease}
+.prompt-ta{width:100%;background:var(--ink2);border:0.5px solid var(--bs);border-radius:10px;padding:14px;color:var(--tp);font-family:inherit;font-size:12px;resize:vertical;outline:none;line-height:1.9;min-height:200px;margin-bottom:6px}
+.prompt-ta:focus{border-color:var(--gold)}
+.prog{display:none;margin-bottom:14px}
+.prog.on{display:block}
+.ph{display:flex;justify-content:space-between;margin-bottom:6px}
+.plbl{font-size:12px;color:var(--gold);font-weight:600}
+.ppct{font-size:12px;color:var(--ts);font-family:'Cinzel',serif}
+.pbar{height:4px;background:var(--ink4);border-radius:3px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--gdim),var(--gold));border-radius:3px;transition:width .5s ease;width:0%}
+
+/* IMAGE UPLOAD */
+.upload-zone{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:16px;margin-bottom:13px}
+.upload-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.uslot{position:relative;cursor:pointer}
+.uslot-inner{background:var(--ink3);border:0.5px dashed var(--b);border-radius:8px;padding:14px 8px;text-align:center;transition:all .2s;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.uslot-inner:hover{border-color:var(--bs);background:rgba(201,168,76,.04)}
+.uslot.has-img .uslot-inner{border-style:solid;border-color:var(--gdim);padding:0;overflow:hidden}
+.uslot.required .uslot-inner{border-color:rgba(201,168,76,.3)}
+.uslot-icon{font-size:18px}
+.uslot-label{font-size:11px;color:var(--ts);font-weight:500}
+.uslot-hint{font-size:9px;color:var(--td)}
+.uslot-img{width:100%;height:88px;object-fit:cover;border-radius:7px;display:block}
+.uslot-del{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.75);border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2}
+.uslot-req{position:absolute;top:5px;left:5px;font-size:8px;color:var(--gold);background:rgba(0,0,0,.55);padding:2px 5px;border-radius:3px;z-index:2;pointer-events:none}
+.dir-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.dir-btn{background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:8px 4px;font-size:11px;color:var(--ts);cursor:pointer;font-family:inherit;transition:all .18s;text-align:center}
+.dir-btn:hover,.dir-btn.on{background:rgba(201,168,76,.08);border-color:var(--bs);color:var(--gold)}
+.cost-notice{font-size:11px;color:var(--ts);background:rgba(201,168,76,.07);border:0.5px solid rgba(201,168,76,.18);border-radius:6px;padding:8px 12px;margin-bottom:13px;text-align:center;line-height:1.6}
+.adv-panel{display:none;animation:fi .3s ease}
+.adv-panel.show{display:block}
+.mode-sep{border:none;border-top:0.5px solid var(--b);margin:12px 0}
+
+/* DREAM MODULE */
+.dream-step{margin-bottom:16px}
+.dream-step-lbl{font-size:11px;color:var(--gdim);font-weight:600;letter-spacing:.12em;margin-bottom:10px}
+.dream-chips{display:flex;flex-wrap:wrap;gap:7px}
+.dream-chip{padding:7px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:0.5px solid var(--b);background:var(--ink3);color:var(--ts);transition:all .18s;user-select:none;-webkit-user-select:none}
+.dream-chip:hover{border-color:var(--bs)}
+.dream-chip.on{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.dream-chip.e-fear.on{background:rgba(139,26,26,.2);border-color:#8B1A1A;color:#E09090}
+.dream-chip.e-calm.on{background:rgba(60,80,130,.2);border-color:#4060A0;color:#90A8E0}
+.dream-chip.e-joy.on{background:rgba(201,168,76,.15);border-color:var(--bs);color:var(--gold)}
+.dream-chip.e-confused.on{background:rgba(120,60,140,.2);border-color:#803090;color:#C090E0}
+.dream-chip.e-sad.on{background:rgba(60,60,90,.3);border-color:#404070;color:#9090C0}
+.dream-chip.subj.on{background:rgba(201,168,76,.1);border-color:var(--bs);color:var(--gold)}
+.dream-chip.subj.dim{opacity:0.38;cursor:not-allowed}
+.dream-chip.time.on{background:rgba(80,160,120,.15);border-color:#50A080;color:#80D4B0}
+.aspect-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.aspect-item{text-align:center}
+.aspect-ring-wrap{width:62px;height:62px;margin:0 auto 6px;border-radius:50%;background:conic-gradient(var(--rc,#C9A84C) calc(var(--pct,50)*1%),var(--ink4) 0);display:flex;align-items:center;justify-content:center}
+.aspect-ring-inner{width:48px;height:48px;border-radius:50%;background:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:18px}
+.aspect-lbl{font-size:11px;color:var(--ts);margin-bottom:3px;font-weight:600}
+.aspect-txt{font-size:10px;color:var(--td);line-height:1.5}
+.action-card{background:linear-gradient(135deg,rgba(76,175,118,.08),rgba(76,175,118,.04));border:0.5px solid rgba(76,175,118,.3);border-radius:8px;padding:12px 14px;margin-top:10px}
+.action-card-lbl{font-size:10px;color:#4CAF76;font-weight:600;letter-spacing:.1em;margin-bottom:6px}
+.action-card-txt{font-size:13px;color:var(--tp);line-height:1.7}
+
+/* REPORT */
+.scorebar{height:5px;background:var(--ink4);border-radius:3px;margin-bottom:14px;overflow:hidden}
+.scorefill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gdim),var(--gold));transition:width 1.2s ease}
+.rhead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.rtitle{font-size:16px;font-weight:600;color:var(--gold);margin-bottom:3px}
+.rmeta{font-size:11px;color:var(--ts)}
+.sbox{text-align:center;min-width:60px}
+.snum{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--gold);line-height:1}
+.slbl{font-size:9px;color:var(--ts);margin-top:2px}
+.score-desc{font-size:11px;color:var(--ts);margin-top:2px}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.dc{background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:10px;text-align:center}
+.dn{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:3px}
+.dcn{font-size:10px;color:var(--ts);line-height:1.4}
+.dl{font-size:10px;color:#4CAF76;margin-top:3px;font-weight:600}
+.report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.report-block{background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:12px}
+.report-block.full{grid-column:1/-1}
+.report-k{font-size:10px;color:var(--gdim);font-weight:600;letter-spacing:.12em;margin-bottom:7px}
+.report-v{font-size:13px;color:var(--tp);line-height:1.8}
+.mini-pills{display:flex;flex-wrap:wrap;gap:6px}
+
+/* 追问功能 */
+.followup{background:var(--ink3);border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-top:12px}
+.followup-title{font-size:11px;color:var(--gdim);font-weight:600;letter-spacing:.12em;margin-bottom:10px}
+.followup-input{display:flex;gap:8px}
+.followup-ta{flex:1;background:var(--ink2);border:0.5px solid var(--b);border-radius:7px;padding:9px 12px;color:var(--tp);font-family:inherit;font-size:12px;outline:none;resize:none;line-height:1.6;height:38px;transition:border-color .2s}
+.followup-ta:focus{border-color:var(--bs);height:72px}
+.followup-btn{padding:9px 16px;background:linear-gradient(135deg,var(--crim),#6B0000);border:0.5px solid rgba(201,168,76,0.3);border-radius:7px;color:var(--gold);font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap;transition:all .18s;align-self:flex-end}
+.followup-btn:hover{filter:brightness(1.2)}
+.followup-btn:disabled{opacity:0.4;cursor:not-allowed}
+.followup-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.fchip{padding:5px 10px;background:var(--ink2);border:0.5px solid var(--b);border-radius:5px;font-size:11px;color:var(--ts);cursor:pointer;transition:all .18s}
+.fchip:hover{border-color:var(--bs);color:var(--gold)}
+.followup-answer{margin-top:12px;display:none}
+.followup-answer.show{display:block;animation:fi .3s ease}
+.fa-conclusion{background:rgba(201,168,76,0.1);border:0.5px solid var(--bs);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:14px;color:var(--gold);font-weight:600;line-height:1.7}
+.fa-conclusion-lbl{font-size:10px;color:var(--gdim);font-weight:600;letter-spacing:.1em;display:block;margin-bottom:5px}
+.fa-points{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.fa-point{display:flex;gap:10px;padding:10px 12px;border-radius:7px;align-items:flex-start}
+.fa-point.action{background:rgba(30,120,100,0.12);border:0.5px solid rgba(30,120,100,0.35)}
+.fa-point.warning{background:rgba(139,26,26,0.12);border:0.5px solid rgba(139,26,26,0.35)}
+.fa-point.tip{background:var(--ink3);border:0.5px solid var(--b)}
+.fa-point-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.fa-point-body{flex:1}
+.fa-point-label{font-size:11px;font-weight:600;margin-bottom:3px}
+.fa-point.action .fa-point-label{color:#7AD4C0}
+.fa-point.warning .fa-point-label{color:#E08080}
+.fa-point.tip .fa-point-label{color:var(--gold)}
+.fa-point-content{font-size:13px;color:var(--tp);line-height:1.7}
+.fa-action{background:linear-gradient(135deg,var(--crim),#5A0000);border:0.5px solid rgba(201,168,76,0.25);border-radius:7px;padding:10px 14px;font-size:12px;color:var(--gold);margin-bottom:8px}
+.fa-action-lbl{font-size:10px;color:var(--gdim);font-weight:600;display:block;margin-bottom:4px}
+.fa-note{font-size:11px;color:var(--td);padding:8px 12px;border-left:2px solid var(--gdim);line-height:1.6}
+
+/* 命盘 */
+.pillars-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.pillar-card{background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:14px 8px;text-align:center;position:relative}
+.pillar-label{font-size:10px;color:var(--ts);margin-bottom:7px;letter-spacing:.1em}
+.pillar-gan{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);font-weight:600;line-height:1;margin-bottom:5px}
+.pillar-zhi{font-size:16px;color:var(--tp);margin-bottom:4px}
+.pillar-el{font-size:10px;color:var(--ts)}
+.pillar-card.today{border-color:var(--gdim)}
+.yearly-grid{display:flex;flex-direction:column;gap:8px}
+.yearly-item{display:flex;gap:12px;background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:12px}
+.yearly-year{font-family:'Cinzel',serif;font-size:13px;color:var(--gold);font-weight:600;min-width:40px;padding-top:2px}
+.yearly-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.yearly-body{flex:1}
+.yearly-text{font-size:13px;color:var(--tp);line-height:1.7}
+.yearly-advice{font-size:11px;color:var(--ts);margin-top:4px;line-height:1.6}
+.el-bars{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.el-bar-row{display:flex;align-items:center;gap:9px}
+.el-bar-label{font-size:11px;color:var(--ts);width:28px;text-align:right;font-weight:600}
+.el-bar-track{flex:1;height:7px;background:var(--ink4);border-radius:4px;overflow:hidden}
+.el-bar-fill{height:100%;border-radius:4px;transition:width 1.2s ease}
+.el-bar-val{font-size:11px;color:var(--ts);width:36px;font-family:'Cinzel',serif}
+
+/* 黄历 */
+.alm-head{text-align:center;padding:12px 0 20px}
+.alm-date-big{font-family:'Cinzel',serif;font-size:46px;font-weight:700;color:var(--gold);line-height:1}
+.alm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.alm-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:14px}
+.alm-card.full{grid-column:1/-1}
+.alm-sec{font-size:11px;color:var(--gdim);font-weight:600;letter-spacing:.12em;margin-bottom:9px}
+.alm-items{display:flex;flex-wrap:wrap;gap:5px}
+.hour-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.hour-item{background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:9px;text-align:center}
+.hour-name{font-size:12px;color:var(--gold);font-weight:600;margin-bottom:2px}
+.hour-time{font-size:10px;color:var(--ts)}
+.god-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.god-good{padding:4px 9px;background:rgba(76,175,118,.12);border:0.5px solid rgba(76,175,118,.4);border-radius:5px;font-size:11px;color:#7AD4C0}
+.god-bad{padding:4px 9px;background:rgba(139,26,26,.15);border:0.5px solid rgba(139,26,26,.4);border-radius:5px;font-size:11px;color:#E08080}
+
+/* 可编辑 */
+[contenteditable]{outline:none;border-radius:4px;transition:background .15s;cursor:text}
+[contenteditable]:hover{background:rgba(201,168,76,0.05)}
+[contenteditable]:focus{background:rgba(201,168,76,0.08);outline:0.5px solid rgba(201,168,76,0.3)}
+
+/* 历史记录 */
+.history-section{margin-bottom:16px}
+.history-title{font-size:11px;color:var(--ts);letter-spacing:.12em;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.history-list{display:flex;flex-direction:column;gap:6px}
+.history-item{background:var(--ink2);border:0.5px solid var(--b);border-radius:8px;padding:10px 13px;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.history-item:hover{border-color:var(--bs)}
+.history-item-left{flex:1;min-width:0}
+.history-item-title{font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item-meta{font-size:10px;color:var(--td);margin-top:2px}
+.history-item-score{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);font-weight:600;flex-shrink:0}
+/* 模型选择器 */
+.model-selector{display:flex;align-items:center;gap:6px}
+.model-label{font-size:10px;color:var(--ts);letter-spacing:.08em;white-space:nowrap}
+.model-select{background:var(--ink3);border:0.5px solid var(--b);border-radius:5px;color:var(--gold);font-size:11px;font-family:inherit;padding:5px 8px;outline:none;cursor:pointer;transition:border-color .18s}
+.model-select:hover,.model-select:focus{border-color:var(--bs)}
+/* 剩余次数角标 */
+#credits-badge{display:none;font-size:10px;padding:3px 9px;border-radius:10px;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:all .18s}
+/* 付费墙 */
+.paywall-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px}
+.paywall-modal{width:min(480px,94vw);max-height:92vh;overflow-y:auto;background:var(--ink2);border:0.5px solid var(--bs);border-radius:14px;padding:22px}
+.pw-close{float:right;background:none;border:none;color:var(--ts);font-size:18px;cursor:pointer;line-height:1;margin-top:-4px}
+.pw-close:hover{color:var(--gold)}
+.pw-title{font-size:17px;font-weight:700;color:var(--gold);letter-spacing:.1em;margin-bottom:4px}
+.pw-sub{font-size:12px;color:var(--ts);margin-bottom:18px;line-height:1.6}
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.plan-card{background:var(--ink3);border:0.5px solid var(--b);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .18s}
+.plan-card.featured{border-color:var(--gold);background:rgba(201,168,76,0.07)}
+.plan-badge{font-size:9px;color:var(--gold);background:rgba(201,168,76,0.18);border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:6px}
+.plan-price{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:4px}
+.plan-unit{font-size:10px;color:var(--ts);margin-bottom:6px}
+.plan-credits{font-size:11px;color:var(--tp);font-weight:600}
+.pw-divider{height:0.5px;background:var(--b);margin:16px 0}
+.pw-act-label{font-size:11px;color:var(--ts);margin-bottom:8px}
+.pw-act-row{display:flex;gap:8px;margin-bottom:8px}
+.pw-act-input{flex:1;background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:9px 12px;color:var(--tp);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
+.pw-act-input:focus{border-color:var(--bs)}
+.pw-act-btn{padding:9px 18px;background:linear-gradient(135deg,var(--crim),#6B0000);border:0.5px solid rgba(201,168,76,0.3);border-radius:7px;color:var(--gold);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;transition:all .18s}
+.pw-act-btn:hover{filter:brightness(1.2)}
+.pw-msg{font-size:12px;min-height:18px;line-height:1.5}
+.pw-footer{font-size:11px;color:var(--td);margin-top:14px;text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo" id="logo-home">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="15" stroke="#C9A84C" stroke-width=".8"/>
+      <circle cx="16" cy="16" r="10" stroke="#C9A84C" stroke-width=".5" stroke-dasharray="2 3"/>
+      <line x1="16" y1="1" x2="16" y2="31" stroke="#C9A84C" stroke-width=".4" opacity=".4"/>
+      <line x1="1" y1="16" x2="31" y2="16" stroke="#C9A84C" stroke-width=".4" opacity=".4"/>
+      <circle cx="16" cy="16" r="3.5" fill="#C9A84C" opacity=".8"/>
+      <circle cx="16" cy="6" r="1.5" fill="#8B1A1A"/>
+      <circle cx="26" cy="16" r="1.5" fill="#8B1A1A"/>
+      <circle cx="16" cy="26" r="1.5" fill="#C9A84C" opacity=".5"/>
+      <circle cx="6" cy="16" r="1.5" fill="#C9A84C" opacity=".5"/>
+    </svg>
+    <div><div class="logo-cn">CYBER METAPHYSICS</div><div class="logo-sub">能量建模·时空规律·环境优化</div></div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-p="home">首页</button>
+    <button class="tab" data-p="analyzer">空间分析</button>
+    <button class="tab" data-p="dream">解梦</button>
+    <button class="tab" data-p="almanac">黄历</button>
+    <button class="tab" data-p="profile">命盘</button>
+    <button class="tab" data-p="wealth">财运</button>
+  </div>
+  <span id="credits-badge" onclick="showPaywall()" style="cursor:pointer"></span>
+</nav>
+
+<!-- ═══ 首页 ═══ -->
+<div class="page on" id="page-home">
+  <div class="hero">
+    <div class="hero-g">☯</div>
+    <div class="hero-t">数字化命理与风水架构</div>
+    <div class="hero-s">Bazi · Qi Men · Feng Shui · 冷静顾问式分析</div>
+    <div class="divider"></div>
+  </div>
+  <div class="daily">
+    <div><div class="dday" id="dday">--</div><div class="dmon" id="dmon">--</div></div>
+    <div class="ddiv"></div>
+    <div style="flex:1">
+      <div class="dlbl">今日吉祥能量</div>
+      <div id="home-pills"><span style="font-size:11px;color:var(--td)">前往黄历页面查看今日运势 →</span></div>
+    </div>
+  </div>
+  <div class="mods" id="mods">
+    <div class="mod feat" data-goto="analyzer"><div class="mbadge">AI</div><div class="mod-icon">🏠</div><div class="mod-name">空间分析</div><div class="mod-desc">环境优化与煞气识别</div></div>
+    <div class="mod" data-goto="dream"><div class="mod-icon">🌙</div><div class="mod-name">周公解梦</div><div class="mod-desc">三层深度解析梦境</div></div>
+    <div class="mod" data-goto="almanac"><div class="mod-icon">📅</div><div class="mod-name">每日黄历</div><div class="mod-desc">奇门遁甲推算吉凶</div></div>
+    <div class="mod" data-goto="profile"><div class="mod-icon">☰</div><div class="mod-name">命理报告</div><div class="mod-desc">四柱建模与决策建议</div></div>
+    <div class="mod feat" data-goto="wealth"><div class="mbadge" style="background:linear-gradient(135deg,#8B1A1A,#6B0000);color:#FFD580">会员</div><div class="mod-icon">💰</div><div class="mod-name">财运分析</div><div class="mod-desc">八字财格，旺财布局</div></div>
+    <div class="mod"><div class="mbadge">即将</div><div class="mod-icon">💍</div><div class="mod-name">择吉日</div><div class="mod-desc">婚嫁开业推算</div></div>
+  </div>
+  <!-- 历史记录 -->
+  <div class="history-section" id="home-history" style="display:none">
+    <div class="history-title">
+      <span>最近分析记录</span>
+      <button class="btn-ghost" id="clear-history-btn">清除记录</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<!-- ═══ 空间分析 ═══ -->
+<div class="page" id="page-analyzer">
+  <div class="h1">空间风水分析</div>
+  <div class="h2">上传图片，AI 直接识别空间能量格局</div>
+
+  <div id="az-input-section">
+    <!-- 费用提示 -->
+    <div class="cost-notice">📷 图片分析消耗 <strong style="color:var(--gold)">2次</strong> &nbsp;·&nbsp; 文字描述模式消耗 <strong style="color:var(--gold)">1次</strong></div>
+
+    <!-- 图片上传区 -->
+    <div class="upload-zone">
+      <div class="upload-slots">
+        <div class="uslot required" id="uslot-0">
+          <input type="file" accept="image/*" id="ufile-0" style="display:none">
+          <div class="uslot-inner" id="uslot-inner-0">
+            <div class="uslot-icon">📷</div>
+            <div class="uslot-label">主视角</div>
+            <div class="uslot-hint">必传 · 房间全景</div>
+          </div>
+          <span class="uslot-req">必传</span>
+        </div>
+        <div class="uslot" id="uslot-1">
+          <input type="file" accept="image/*" id="ufile-1" style="display:none">
+          <div class="uslot-inner" id="uslot-inner-1">
+            <div class="uslot-icon">🚪</div>
+            <div class="uslot-label">入户门/玄关</div>
+            <div class="uslot-hint">选填</div>
+          </div>
+        </div>
+        <div class="uslot" id="uslot-2">
+          <input type="file" accept="image/*" id="ufile-2" style="display:none">
+          <div class="uslot-inner" id="uslot-inner-2">
+            <div class="uslot-icon">🔍</div>
+            <div class="uslot-label">问题区域</div>
+            <div class="uslot-hint">选填</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--td);text-align:center">点击图片框上传 · JPG / PNG / HEIC · 单张最大 10MB</div>
+    </div>
+
+    <!-- 房间类型 + 分析侧重 -->
+    <div class="cfg">
+      <div class="cfgc"><div class="cfgl">房间类型</div>
+        <select class="cfgs" id="roomtype"><option>卧室</option><option>客厅</option><option>书房/办公室</option><option>厨房</option><option>玄关</option><option>店面</option></select>
+      </div>
+      <div class="cfgc"><div class="cfgl">分析侧重</div>
+        <select class="cfgs" id="focus"><option>综合风水</option><option>财运旺财</option><option>健康睡眠</option><option>感情桃花</option><option>事业文昌</option></select>
+      </div>
+    </div>
+
+    <!-- 入户门朝向 -->
+    <div class="cfgc" style="margin-bottom:13px">
+      <div class="cfgl">入户门朝向 <span style="color:var(--td);font-weight:400">（选填，可提升分析准确度）</span></div>
+      <div class="dir-grid" id="door-dir-row">
+        <button class="dir-btn" data-dir="北">北</button>
+        <button class="dir-btn" data-dir="东北">东北</button>
+        <button class="dir-btn" data-dir="东">东</button>
+        <button class="dir-btn" data-dir="东南">东南</button>
+        <button class="dir-btn" data-dir="南">南</button>
+        <button class="dir-btn" data-dir="西南">西南</button>
+        <button class="dir-btn" data-dir="西">西</button>
+        <button class="dir-btn" data-dir="西北">西北</button>
+      </div>
+    </div>
+
+    <hr class="mode-sep">
+
+    <!-- 切换：文字描述模式 -->
+    <div style="text-align:center;margin-bottom:10px">
+      <button class="btn-ghost" id="text-mode-toggle" style="font-size:11px">📝 没有图片？切换文字描述模式</button>
+    </div>
+    <div id="text-mode-panel" style="display:none">
+      <textarea class="form-ta" id="room-desc" rows="5" placeholder="请描述您的空间布局，包括：&#10;• 门窗位置与朝向（如：门在南边，窗在东边）&#10;• 主要家具摆放（床/沙发朝向、紧靠哪面墙）&#10;• 采光与颜色风格&#10;• 楼层、大小、入住年限"></textarea>
+      <div class="char-count" id="char-count">0 字</div>
+    </div>
+
+    <hr class="mode-sep">
+
+    <!-- 高级模式：编辑 Prompt（暂时隐藏，后期开放） -->
+    <div style="display:none">
+      <button class="btn-ghost" id="adv-toggle" style="font-size:11px">⚙ 高级模式：查看 / 编辑分析指令</button>
+    </div>
+    <div class="adv-panel" id="adv-panel" style="display:none!important">
+      <div style="font-size:11px;color:var(--td);margin-bottom:8px;line-height:1.6">💡 以下为系统自动生成的分析指令，您可在生成前手动补充信息（图片将自动附加）</div>
+      <textarea class="prompt-ta" id="prompt-ta" spellcheck="false" placeholder="点击「⚙ 高级模式」自动生成指令..."></textarea>
+      <button class="btn-ghost" id="reset-btn" style="font-size:11px;margin-bottom:10px">↺ 重置为默认指令</button>
+    </div>
+
+    <div class="errbox" id="az-err"></div>
+    <div class="prog" id="prog2">
+      <div class="ph"><div class="plbl" id="p2lbl">AI 识别图像中...</div><div class="ppct" id="p2pct">0%</div></div>
+      <div class="pbar"><div class="pfill" id="p2fill"></div></div>
+    </div>
+    <button class="btn-red" id="generate-btn">开始风水分析</button>
+  </div>
+
+  <div id="rpt" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--td)">📝 点击文字可直接编辑</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn-ghost" id="re-gen-btn">重新生成</button>
+        <button class="btn-ghost" id="copy-btn">复制报告</button>
+      </div>
+    </div>
+
+    <!-- 评分区 -->
+    <div class="card">
+      <div class="rhead">
+        <div>
+          <div class="rtitle" id="rtitle" contenteditable="true"></div>
+          <div class="rmeta">Cyber Metaphysics Architect · 能量建模 · 时空规律 · 环境优化</div>
+        </div>
+        <div class="sbox">
+          <div class="snum" id="snum" contenteditable="true">--</div>
+          <div class="slbl">气场评分</div>
+          <div class="score-desc" id="score-desc"></div>
+        </div>
+      </div>
+      <div class="scorebar"><div class="scorefill" id="scorefill" style="width:0%"></div></div>
+      <!-- 核心发现 -->
+      <div class="stitle">核心风水发现</div>
+      <div id="findings"></div>
+    </div>
+
+    <!-- 深度分析 -->
+    <div class="card" id="deep-analysis-card" style="display:none">
+      <div class="stitle">五维深度分析</div>
+      <div id="deep-analysis"></div>
+    </div>
+
+    <!-- 吉位 -->
+    <div class="card"><div class="stitle">吉祥方位与能量</div><div class="dgrid" id="dirs"></div></div>
+
+    <!-- 物品建议 -->
+    <div class="card">
+      <div class="stitle">风水布置方案</div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--ts);margin-bottom:6px">建议摆放</div>
+        <div id="items" style="display:flex;flex-wrap:wrap"></div>
+      </div>
+      <div id="remove-section" style="display:none">
+        <div style="font-size:11px;color:var(--ts);margin-bottom:6px">建议移除或调整</div>
+        <div id="removes" style="display:flex;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- 大师总评 -->
+    <div class="aibox">
+      <div class="ailbl"><div class="aidot"></div>顾问综合分析</div>
+      <div class="aitxt" id="comment" contenteditable="true" style="min-height:60px"></div>
+    </div>
+
+    <!-- 追问功能 -->
+    <div class="followup">
+      <div class="followup-title">✦ 深度咨询顾问</div>
+      <div class="followup-chips" id="followup-chips">
+        <span class="fchip">财位具体如何激活？</span>
+        <span class="fchip">如何化解门旁镜煞？</span>
+        <span class="fchip">卧室颜色怎么搭配？</span>
+        <span class="fchip">床位有无更好的选择？</span>
+        <span class="fchip">适合放什么植物？</span>
+      </div>
+      <div class="followup-input">
+        <textarea class="followup-ta" id="followup-input" placeholder="向顾问提问..."></textarea>
+        <button class="followup-btn" id="followup-btn">咨询顾问</button>
+      </div>
+      <div class="followup-answer" id="followup-answer"></div>
+    </div>
+
+    <br>
+    <div style="display:flex;gap:10px">
+      <button class="btn-out" id="restart-btn" style="flex:1">← 重新分析</button>
+      <button class="btn-out" id="az-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出报告</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 周公解梦 ═══ -->
+<div class="page" id="page-dream">
+  <div class="h1">周公解梦</div>
+  <div class="h2">引导式梦境采集，三维深度解析</div>
+
+  <div id="dream-input-section">
+    <!-- Step 1: 情绪 -->
+    <div class="dream-step">
+      <div class="dream-step-lbl">① 醒来时的感受</div>
+      <div class="dream-chips" id="dream-emotion-row">
+        <span class="dream-chip e-fear" data-emotion="恐惧">😨 恐惧</span>
+        <span class="dream-chip e-calm" data-emotion="平静">😌 平静</span>
+        <span class="dream-chip e-joy" data-emotion="欣喜">😊 欣喜</span>
+        <span class="dream-chip e-confused" data-emotion="困惑">😵 困惑</span>
+        <span class="dream-chip e-sad" data-emotion="压抑">😔 压抑</span>
+      </div>
+    </div>
+
+    <!-- Step 2: 主角 -->
+    <div class="dream-step">
+      <div class="dream-step-lbl">② 梦中出现了 <span style="color:var(--td);font-weight:400">（可多选，最多3个）</span></div>
+      <div class="dream-chips" id="dream-subject-row">
+        <span class="dream-chip subj" data-subj="自己">自己</span>
+        <span class="dream-chip subj" data-subj="已故亲人">已故亲人</span>
+        <span class="dream-chip subj" data-subj="陌生人">陌生人</span>
+        <span class="dream-chip subj" data-subj="恋人/伴侣">恋人/伴侣</span>
+        <span class="dream-chip subj" data-subj="动物">动物</span>
+        <span class="dream-chip subj" data-subj="水/海洋">水/海洋</span>
+        <span class="dream-chip subj" data-subj="建筑/房子">建筑/房子</span>
+        <span class="dream-chip subj" data-subj="追逐场景">追逐场景</span>
+        <span class="dream-chip subj" data-subj="飞翔">飞翔</span>
+      </div>
+    </div>
+
+    <!-- Step 3: 细节 -->
+    <div class="dream-step">
+      <div class="dream-step-lbl">③ 还记得什么细节？<span style="color:var(--td);font-weight:400">（选填）</span></div>
+      <textarea class="form-ta" id="dreamtxt" rows="4" placeholder="颜色、地点、印象深刻的场景、梦境结局…描述越详细，解析越准确"></textarea>
+    </div>
+
+    <!-- Step 4: 时间 -->
+    <div class="dream-step">
+      <div class="dream-step-lbl">④ 梦境发生在 <span style="color:var(--td);font-weight:400">（选填）</span></div>
+      <div class="dream-chips" id="dream-time-row">
+        <span class="dream-chip time" data-time="清晨（4-7时），此时梦境与现实关联最强">清晨梦</span>
+        <span class="dream-chip time" data-time="午夜（0-3时），阴气较重的时段">午夜梦</span>
+        <span class="dream-chip time" data-time="午睡，阳气充沛时段">午睡梦</span>
+      </div>
+    </div>
+
+    <div class="errbox" id="dream-err"></div>
+    <button class="btn-out" id="dreambtn">开始解梦</button>
+  </div>
+
+  <div class="loading" id="dream-loading"><div class="spin"></div>AI 正在解析梦境...<div class="loading-sub">潜意识信号 · 时空规律 · 行动建议</div></div>
+
+  <div id="dreamres" style="display:none">
+    <!-- 梦境整体解读 -->
+    <div class="card">
+      <div class="stitle">梦境整体解读</div>
+      <div class="aitxt" id="dreamout" style="margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">主五行：<span id="dream-el" style="color:var(--gold);font-weight:600"></span></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">整体吉凶：<span id="dream-omen" style="font-weight:600"></span></div>
+      </div>
+    </div>
+
+    <!-- 意象解析 -->
+    <div class="card">
+      <div class="stitle">潜意识信号解析</div>
+      <div id="syms"></div>
+    </div>
+
+    <!-- 四象限运势（环形图） -->
+    <div class="card">
+      <div class="stitle">近30天运势预测</div>
+      <div class="aitxt" id="dream-pred" style="margin-bottom:4px"></div>
+      <div class="aspect-grid" id="dream-aspects"></div>
+    </div>
+
+    <!-- 化解方案 -->
+    <div id="dream-remedy-section" style="display:none">
+      <div class="card" style="border-color:rgba(139,26,26,0.4)">
+        <div class="stitle">化解方案</div>
+        <div class="aitxt" id="dream-remedy"></div>
+      </div>
+    </div>
+
+    <!-- 顾问总评 + 行动建议 -->
+    <div class="aibox">
+      <div class="ailbl"><div class="aidot"></div>顾问总评</div>
+      <div class="aitxt" id="dream-master" style="margin-bottom:10px"></div>
+      <div class="action-card" id="dream-action-card" style="display:none">
+        <div class="action-card-lbl">今日立即可做</div>
+        <div class="action-card-txt" id="dream-advice"></div>
+      </div>
+    </div>
+
+    <br>
+    <button class="btn-out" id="dream-restart-btn">← 重新解梦</button>
+  </div>
+</div>
+
+<!-- ═══ 每日黄历 ═══ -->
+<div class="page" id="page-almanac">
+  <div class="alm-head">
+    <div class="alm-date-big" id="almd">--</div>
+    <div style="font-size:12px;color:var(--ts);margin-top:4px" id="almdate"></div>
+    <div style="font-size:11px;color:var(--gdim);font-weight:600;margin-top:6px" id="alm-gz">--</div>
+  </div>
+  <div style="margin-bottom:14px;text-align:center">
+    <button class="btn-sm" id="alm-btn">✦ AI 推算今日黄历 ✦</button>
+  </div>
+  <div class="errbox" id="alm-err"></div>
+  <div class="loading" id="alm-loading"><div class="spin"></div>AI 正在建模时空规律...<div class="loading-sub">奇门遁甲·六壬神课·建除十二神</div></div>
+  <div id="alm-result" style="display:none">
+    <div style="background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="alm-sec">今日神煞</div>
+      <div class="god-row" id="alm-gods"></div>
+    </div>
+    <div class="alm-grid">
+      <div class="alm-card"><div class="alm-sec">今日宜</div><div class="alm-items" id="alm-yi"></div></div>
+      <div class="alm-card"><div class="alm-sec">今日忌</div><div class="alm-items" id="alm-ji"></div></div>
+      <div class="alm-card"><div class="alm-sec">吉时</div><div class="hour-grid" id="alm-hours"></div></div>
+      <div class="alm-card"><div class="alm-sec">吉位 / 吉色</div><div class="alm-items" id="alm-dirs"></div></div>
+      <div class="alm-card full"><div class="alm-sec">今日五行能量分布</div><div class="el-bars" id="alm-els"></div></div>
+    </div>
+    <div class="aibox" style="margin-top:10px"><div class="ailbl"><div class="aidot"></div>今日运势总评</div><div class="aitxt" id="alm-summary"></div></div>
+  </div>
+</div>
+
+<!-- ═══ 八字命盘 ═══ -->
+<div class="page" id="page-profile">
+  <div class="h1">命理报告</div>
+  <div class="h2">基于《子平真诠》算法引擎，输出能量模型、格局诊断、风险预警与物理补救</div>
+  <div class="card">
+    <div style="margin-bottom:13px">
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">出生日期</label>
+      <input type="date" id="bday" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+    </div>
+    <div style="margin-bottom:13px">
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">出生时辰</label>
+      <select id="btime" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+        <option value="">不详（仅推算年月日三柱）</option>
+        <option>子时 23:00-01:00</option><option>丑时 01:00-03:00</option><option>寅时 03:00-05:00</option>
+        <option>卯时 05:00-07:00</option><option>辰时 07:00-09:00</option><option>巳时 09:00-11:00</option>
+        <option>午时 11:00-13:00</option><option>未时 13:00-15:00</option><option>申时 15:00-17:00</option>
+        <option>酉时 17:00-19:00</option><option>戌时 19:00-21:00</option><option>亥时 21:00-23:00</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">性别</label>
+      <div style="display:flex;gap:9px" id="genrow">
+        <div style="flex:1;padding:9px;background:rgba(201,168,76,.08);border:0.5px solid var(--gold);border-radius:6px;color:var(--gold);font-size:13px;text-align:center;cursor:pointer">男·乾</div>
+        <div style="flex:1;padding:9px;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;color:var(--ts);font-size:13px;text-align:center;cursor:pointer">女·坤</div>
+      </div>
+    </div>
+  </div>
+  <div class="errbox" id="prof-err"></div>
+  <button class="btn-out" id="profilebtn">生成命理与风水报告</button>
+  <div class="loading" id="prof-loading"><div class="spin"></div>AI 正在建模命理数据...<div class="loading-sub">子平真诠算法·大运流年建模中</div></div>
+  <div id="profileres" style="display:none">
+    <div class="card">
+      <div class="stitle">四柱排盘</div>
+      <div class="pillars-grid" id="pillars-grid"></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">日主：<span id="prof-dm" style="color:var(--gold);font-weight:600"></span></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">强弱：<span id="prof-st" style="color:var(--gold);font-weight:600"></span></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">格局：<span id="prof-pt" style="color:var(--gold);font-weight:600"></span></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">喜用神：<span id="prof-ys" style="color:#7AD4C0;font-weight:600"></span></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--ts)">忌神：<span id="prof-js" style="color:#E08080;font-weight:600"></span></div>
+      </div>
+    </div>
+    <div class="card"><div class="stitle">五行强弱分布</div><div class="el-bars" id="prof-els"></div></div>
+    <div class="card">
+      <div class="stitle">格局与性格特质</div>
+      <div class="aitxt" id="prof-character" style="margin-bottom:10px"></div>
+      <div id="prof-findings"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">核心输出</div>
+      <div class="report-grid">
+        <div class="report-block">
+          <div class="report-k">能量模型</div>
+          <div class="report-v" id="prof-energy-model"></div>
+        </div>
+        <div class="report-block">
+          <div class="report-k">格局诊断</div>
+          <div class="report-v" id="prof-pattern-diagnosis"></div>
+        </div>
+        <div class="report-block">
+          <div class="report-k">风险预警</div>
+          <div class="report-v" id="prof-risk-warning"></div>
+        </div>
+        <div class="report-block">
+          <div class="report-k">物理补救</div>
+          <div class="report-v mini-pills" id="prof-physical-remedy"></div>
+        </div>
+        <div class="report-block full">
+          <div class="report-k">当下宜 / 忌</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--ts);margin-bottom:6px">宜</div>
+              <div class="mini-pills" id="prof-yi"></div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--ts);margin-bottom:6px">忌</div>
+              <div class="mini-pills" id="prof-ji"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stitle">大运流年详解</div>
+      <div style="font-size:11px;color:var(--ts);margin-bottom:12px">当前大运：<span id="prof-dy" style="color:var(--gold);font-weight:600"></span></div>
+      <div class="yearly-grid" id="prof-yearly"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">喜用神居家风水建议</div>
+      <div style="font-size:12px;color:var(--ts);margin-bottom:12px;line-height:1.7" id="prof-fs-intro"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:10px"><div style="font-size:10px;color:var(--ts);margin-bottom:6px;font-weight:600">吉祥方位</div><div id="pld" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:10px"><div style="font-size:10px;color:var(--ts);margin-bottom:6px;font-weight:600">吉祥颜色</div><div id="plc" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:10px"><div style="font-size:10px;color:var(--ts);margin-bottom:6px;font-weight:600">建议吉祥物</div><div id="pli" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+        <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:10px"><div style="font-size:10px;color:var(--ts);margin-bottom:6px;font-weight:600">忌讳方位</div><div id="pad" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+      </div>
+    </div>
+    <div class="aibox"><div class="ailbl"><div class="aidot"></div>顾问综合解读</div><div class="aitxt" id="prof-comment"></div></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn-out" id="prof-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出命理报告</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 财运分析 ═══ -->
+<div class="page" id="page-wealth">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <div class="h1" style="margin-bottom:0">财运分析</div>
+    <span style="padding:3px 10px;background:linear-gradient(135deg,rgba(139,26,26,0.6),rgba(107,0,0,0.6));border:0.5px solid rgba(201,168,76,0.4);border-radius:12px;font-size:10px;font-weight:600;color:#FFD580;letter-spacing:.08em">会员专属</span>
+  </div>
+  <div class="h2">基于《子平真诠》财格建模，深度分析财运时空规律与环境优化方案</div>
+
+  <div class="card" style="border-color:rgba(201,168,76,0.35)">
+    <div style="margin-bottom:13px">
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">出生日期</label>
+      <input type="date" id="w-bday" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+    </div>
+    <div style="margin-bottom:13px">
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">出生时辰</label>
+      <select id="w-btime" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+        <option value="">不详</option>
+        <option>子时 23:00-01:00</option><option>丑时 01:00-03:00</option><option>寅时 03:00-05:00</option>
+        <option>卯时 05:00-07:00</option><option>辰时 07:00-09:00</option><option>巳时 09:00-11:00</option>
+        <option>午时 11:00-13:00</option><option>未时 13:00-15:00</option><option>申时 15:00-17:00</option>
+        <option>酉时 17:00-19:00</option><option>戌时 19:00-21:00</option><option>亥时 21:00-23:00</option>
+      </select>
+    </div>
+    <div style="margin-bottom:13px">
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">性别</label>
+      <div style="display:flex;gap:9px" id="w-genrow">
+        <div style="flex:1;padding:9px;background:rgba(201,168,76,.08);border:0.5px solid var(--gold);border-radius:6px;color:var(--gold);font-size:13px;text-align:center;cursor:pointer">男·乾</div>
+        <div style="flex:1;padding:9px;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;color:var(--ts);font-size:13px;text-align:center;cursor:pointer">女·坤</div>
+      </div>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">当前主要财务目标</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px" id="w-goal-chips">
+        <span style="padding:5px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer" class="w-gchip">投资理财</span>
+        <span style="padding:5px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer" class="w-gchip">事业财运</span>
+        <span style="padding:5px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer" class="w-gchip">偏财运势</span>
+        <span style="padding:5px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer" class="w-gchip">整体财运</span>
+      </div>
+      <input type="hidden" id="w-goal" value="整体财运">
+    </div>
+  </div>
+
+  <div class="errbox" id="w-err"></div>
+  <button class="btn-red" id="w-btn" style="background:linear-gradient(135deg,#6B3A00,#3A1F00);border-color:rgba(201,168,76,0.4)">深度分析我的财运</button>
+  <div class="loading" id="w-loading"><div class="spin"></div>AI 正在建模财运数据...<div class="loading-sub">财星能量建模·方位时空规律·财运周期分析中</div></div>
+
+  <div id="w-result" style="display:none">
+
+    <!-- 财格总评 -->
+    <div class="card" style="border-color:rgba(201,168,76,0.4)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:16px;font-weight:600;color:var(--gold);margin-bottom:3px" id="w-title">财运分析报告</div>
+          <div style="font-size:11px;color:var(--ts)">Cyber Metaphysics Architect · 财格能量建模</div>
+        </div>
+        <div style="text-align:center;min-width:60px">
+          <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--gold);line-height:1" id="w-score">--</div>
+          <div style="font-size:9px;color:var(--ts);margin-top:2px">财运指数</div>
+        </div>
+      </div>
+      <div class="scorebar"><div class="scorefill" id="w-scorefill" style="width:0%;background:linear-gradient(90deg,#8B5E00,#C9A84C)"></div></div>
+      <div class="stitle">财格分析</div>
+      <div id="w-caige"></div>
+    </div>
+
+    <!-- 正财偏财 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="card">
+        <div class="stitle">正财运势</div>
+        <div style="font-size:13px;color:var(--tp);line-height:1.8" id="w-zhengcai"></div>
+      </div>
+      <div class="card">
+        <div class="stitle">偏财运势</div>
+        <div style="font-size:13px;color:var(--tp);line-height:1.8" id="w-piancai"></div>
+      </div>
+    </div>
+
+    <!-- 财神方位 -->
+    <div class="card">
+      <div class="stitle">财神方位与旺财布局</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px" id="w-dirs"></div>
+      <div style="font-size:13px;color:var(--tp);line-height:1.85" id="w-layout"></div>
+    </div>
+
+    <!-- 旺财物品 -->
+    <div class="card">
+      <div class="stitle">旺财风水物品</div>
+      <div id="w-items" style="display:flex;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div style="font-size:12px;color:var(--ts);line-height:1.7" id="w-items-detail"></div>
+    </div>
+
+    <!-- 财运周期 -->
+    <div class="card">
+      <div class="stitle">财运周期预测</div>
+      <div style="font-size:11px;color:var(--ts);margin-bottom:12px">当前财运大运：<span id="w-dayun" style="color:var(--gold);font-weight:600"></span></div>
+      <div id="w-yearly" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- 忌讳 -->
+    <div class="card" style="border-color:rgba(139,26,26,0.35)">
+      <div class="stitle">财运忌讳与化解</div>
+      <div id="w-taboo"></div>
+    </div>
+
+    <!-- 大师总评 -->
+    <div class="aibox">
+      <div class="ailbl"><div class="aidot"></div>顾问财运总评</div>
+      <div class="aitxt" id="w-comment" contenteditable="true" style="min-height:60px"></div>
+    </div>
+
+    <!-- 追问 -->
+    <div class="followup" style="margin-top:12px">
+      <div class="followup-title">✦ 深度咨询财运顾问</div>
+      <div class="followup-chips" id="w-followup-chips">
+        <span class="fchip">今年哪个月财运最旺？</span>
+        <span class="fchip">如何激活我的财位？</span>
+        <span class="fchip">适合什么投资方向？</span>
+        <span class="fchip">偏财如何旺起来？</span>
+        <span class="fchip">财运最差的时期如何应对？</span>
+      </div>
+      <div class="followup-input">
+        <textarea class="followup-ta" id="w-followup-input" placeholder="向财运顾问提问..."></textarea>
+        <button class="followup-btn" id="w-followup-btn">咨询顾问</button>
+      </div>
+      <div class="followup-answer" id="w-followup-answer"></div>
+    </div>
+
+    <br>
+    <div style="display:flex;gap:10px">
+      <button class="btn-out" id="w-restart-btn" style="flex:1">← 重新分析</button>
+      <button class="btn-out" id="w-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出报告</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<!-- ═══ 付费墙 Modal ═══ -->
+<div class="paywall-overlay" id="paywall-overlay" onclick="if(event.target===this)hidePaywall()">
+  <div class="paywall-modal">
+    <button class="pw-close" onclick="hidePaywall()">✕</button>
+    <div class="pw-title">解锁高精度 AI 分析</div>
+    <div class="pw-sub">免费试用已用完。选择 Claude 模型可享受最精准的命理解读，<br>每次分析成本仅需几毛钱。</div>
+
+    <div class="plan-grid">
+      <div class="plan-card" onclick="selectPlan(this,'¥6.9 · 3次分析')">
+        <div class="plan-badge">体验</div>
+        <div class="plan-price">¥6.9</div>
+        <div class="plan-unit">一次性</div>
+        <div class="plan-credits">3 次分析</div>
+      </div>
+      <div class="plan-card featured" onclick="selectPlan(this,'¥19.9 · 10次分析')">
+        <div class="plan-badge">⭐ 推荐</div>
+        <div class="plan-price">¥19.9</div>
+        <div class="plan-unit">一次性</div>
+        <div class="plan-credits">10 次分析</div>
+      </div>
+      <div class="plan-card" onclick="selectPlan(this,'¥49.9 · 30次分析')">
+        <div class="plan-badge">超值</div>
+        <div class="plan-price">¥49.9</div>
+        <div class="plan-unit">一次性</div>
+        <div class="plan-credits">30 次分析</div>
+      </div>
+    </div>
+    <div id="plan-hint" style="display:none;font-size:12px;color:#7AD4C0;margin:-10px 0 14px;text-align:center;line-height:1.6"></div>
+
+    <div class="pw-divider"></div>
+
+    <!-- 微信支付区 -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:14px;background:var(--ink3);border-radius:10px;border:0.5px solid var(--b)">
+      <img src="assets/wechat-qr.png" alt="微信二维码" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;background:var(--ink4);object-fit:cover">
+      <div>
+        <div style="font-size:13px;color:var(--tp);font-weight:600;margin-bottom:5px">微信扫码付款</div>
+        <div style="font-size:11px;color:var(--ts);line-height:1.7">① 扫码加微信好友<br>② 发送付款截图及所选套餐<br>③ 收到激活码后在下方输入</div>
+      </div>
+    </div>
+
+    <div class="pw-act-label">已有激活码？在此输入：</div>
+    <div class="pw-act-row">
+      <input class="pw-act-input" id="act-code" placeholder="CMA-XXXX-XXXX" maxlength="20"
+        onkeydown="if(event.key==='Enter')activateCode()">
+      <button class="pw-act-btn" onclick="activateCode()">激活</button>
+    </div>
+    <div class="pw-msg" id="act-msg"></div>
+
+    <div class="pw-footer">
+      购买后请联系获取激活码 · 激活码一次性有效 · 不同套餐互不通用
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

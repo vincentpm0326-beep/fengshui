@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CMA 后台管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#C9A84C;--gdim:#7A5E2A;--crim:#8B1A1A;--ink:#0A0A0F;--ink2:#12121A;--ink3:#1A1A26;--ink4:#22223A;--tp:#F0E8D0;--ts:#9A8A6A;--td:#5A4A3A;--b:rgba(201,168,76,0.2);--bs:rgba(201,168,76,0.45)}
+body{background:var(--ink);color:var(--tp);font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;font-size:14px;min-height:100vh;padding:20px}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);margin-bottom:24px;background:rgba(10,10,15,0.95);border-radius:10px}
+.logo{font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.1em}
+.badge{background:rgba(139,26,26,0.5);color:#FFB0B0;font-size:10px;padding:3px 10px;border-radius:10px}
+.login-card{max-width:400px;margin:80px auto;background:var(--ink2);border:0.5px solid var(--b);border-radius:14px;padding:30px;text-align:center}
+.login-title{font-size:18px;color:var(--gold);font-weight:600;margin-bottom:6px;letter-spacing:.1em}
+.login-sub{font-size:12px;color:var(--ts);margin-bottom:24px}
+.input{width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:11px 14px;color:var(--tp);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:12px}
+.input:focus{border-color:var(--bs)}
+.btn-primary{width:100%;padding:12px;background:linear-gradient(135deg,var(--crim),#6B0000);border:0.5px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .18s}
+.btn-primary:hover{filter:brightness(1.2)}
+.btn-sm{padding:5px 12px;background:none;border:0.5px solid var(--bs);border-radius:5px;color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit;transition:all .18s}
+.btn-sm:hover{background:rgba(201,168,76,0.1)}
+.btn-danger{padding:5px 10px;background:none;border:0.5px solid rgba(139,26,26,0.5);border-radius:5px;color:#E08080;font-size:11px;cursor:pointer;font-family:inherit;transition:all .18s}
+.btn-danger:hover{background:rgba(139,26,26,0.15)}
+.section{max-width:1000px;margin:0 auto 24px}
+.section-title{font-size:11px;color:var(--ts);letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:0.5px;background:var(--b)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
+.stat-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:16px;text-align:center}
+.stat-num{font-size:28px;font-weight:700;color:var(--gold);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:11px;color:var(--ts)}
+.gen-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:12px;padding:20px;margin-bottom:24px}
+.gen-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+.field-lbl{font-size:10px;color:var(--ts);font-weight:600;letter-spacing:.08em;margin-bottom:6px}
+.select{width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 10px;color:var(--tp);font-size:13px;font-family:inherit;outline:none}
+.new-code-box{background:rgba(201,168,76,0.07);border:0.5px solid var(--bs);border-radius:8px;padding:14px;margin-top:14px;display:none}
+.new-code{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:.12em;text-align:center;margin-bottom:6px}
+.new-code-meta{font-size:11px;color:var(--ts);text-align:center}
+.table-wrap{background:var(--ink2);border:0.5px solid var(--b);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{background:var(--ink3);padding:10px 14px;font-size:10px;color:var(--ts);font-weight:600;letter-spacing:.1em;text-align:left;border-bottom:0.5px solid var(--b)}
+td{padding:10px 14px;font-size:12px;color:var(--tp);border-bottom:0.5px solid rgba(201,168,76,0.08);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,0.03)}
+.code-text{font-family:monospace;font-size:13px;color:var(--gold);font-weight:600;cursor:pointer;letter-spacing:.06em}
+.code-text:hover{text-decoration:underline}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-unlimited{background:rgba(201,168,76,0.15);color:var(--gold);border:0.5px solid var(--gdim)}
+.tag-3{background:rgba(76,175,118,0.12);color:#7AD4C0;border:0.5px solid rgba(76,175,118,0.3)}
+.tag-10{background:rgba(201,168,76,0.12);color:#E8C96A;border:0.5px solid rgba(201,168,76,0.3)}
+.tag-30{background:rgba(139,26,26,0.15);color:#E08080;border:0.5px solid rgba(139,26,26,0.4)}
+.status-ok{color:#4CAF76;font-size:11px}
+.status-pend{color:var(--ts);font-size:11px}
+.progress{height:5px;background:var(--ink4);border-radius:3px;overflow:hidden;margin-top:4px;min-width:60px}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gdim),var(--gold));transition:width .5s}
+.msg{font-size:12px;min-height:16px;margin-top:10px}
+.msg.ok{color:#4CAF76}.msg.err{color:#E08080}
+.empty{text-align:center;padding:40px;color:var(--td);font-size:13px}
+.filter-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.filter-btn{padding:5px 14px;background:none;border:0.5px solid var(--b);border-radius:5px;color:var(--ts);font-size:11px;cursor:pointer;font-family:inherit;transition:all .18s}
+.filter-btn:hover,.filter-btn.on{border-color:var(--bs);color:var(--gold);background:rgba(201,168,76,0.07)}
+</style>
+</head>
+<body>
+
+<div id="login-view">
+  <div class="login-card">
+    <div style="font-size:28px;margin-bottom:14px">⚙</div>
+    <div class="login-title">CMA 管理后台</div>
+    <div class="login-sub">Cyber Metaphysics Architect · 激活码管理系统</div>
+    <input class="input" type="password" id="secret-input" placeholder="输入管理密钥..." onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-primary" onclick="doLogin()">进入后台</button>
+    <div class="msg err" id="login-msg"></div>
+  </div>
+</div>
+
+<div id="admin-view" style="display:none">
+  <div class="nav">
+    <div class="logo">⚙ CMA 后台管理</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:11px;color:var(--ts)" id="last-refresh"></span>
+      <button class="btn-sm" onclick="loadData()">刷新</button>
+      <div class="badge">管理员</div>
+    </div>
+  </div>
+
+  <!-- 统计 -->
+  <div class="section">
+    <div class="section-title">总览统计</div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">总激活码</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-activated">-</div><div class="stat-lbl">已激活</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-pending">-</div><div class="stat-lbl">未使用</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-unlimited">-</div><div class="stat-lbl">无限次码</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-issued">-</div><div class="stat-lbl">总发放次数</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-used">-</div><div class="stat-lbl">已使用次数</div></div>
+    </div>
+  </div>
+
+  <!-- 生成激活码 -->
+  <div class="section">
+    <div class="section-title">生成激活码</div>
+    <div class="gen-card">
+      <div class="gen-grid">
+        <div>
+          <div class="field-lbl">微信昵称（付款人）</div>
+          <input class="input" id="g-wechat" placeholder="如：张三" style="margin:0">
+        </div>
+        <div>
+          <div class="field-lbl">套餐类型</div>
+          <select class="select" id="g-credits">
+            <option value="3">体验包 · 3次 (¥6.9)</option>
+            <option value="10" selected>标准包 · 10次 (¥19.9)</option>
+            <option value="30">超值包 · 30次 (¥49.9)</option>
+            <option value="-1">无限次 · 测试专用</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-lbl">备注</div>
+          <input class="input" id="g-note" placeholder="可选备注" style="margin:0">
+        </div>
+        <div>
+          <button class="btn-primary" style="width:auto;padding:9px 22px" onclick="generateCode()">生 成</button>
+        </div>
+      </div>
+      <div class="msg" id="gen-msg"></div>
+      <div class="new-code-box" id="new-code-box">
+        <div class="new-code" id="new-code-text"></div>
+        <div class="new-code-meta" id="new-code-meta"></div>
+        <div style="text-align:center;margin-top:10px">
+          <button class="btn-sm" onclick="copyNewCode()">复制激活码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 激活码列表 -->
+  <div class="section">
+    <div class="section-title">激活码列表</div>
+    <div class="filter-row">
+      <button class="filter-btn on" data-filter="all" onclick="setFilter(this)">全部</button>
+      <button class="filter-btn" data-filter="pending" onclick="setFilter(this)">未激活</button>
+      <button class="filter-btn" data-filter="activated" onclick="setFilter(this)">已激活</button>
+      <button class="filter-btn" data-filter="unlimited" onclick="setFilter(this)">无限次</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>激活码</th>
+            <th>微信昵称</th>
+            <th>套餐</th>
+            <th>用量</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>激活时间</th>
+            <th>备注</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="codes-tbody"></tbody>
+      </table>
+      <div class="empty" id="codes-empty" style="display:none">暂无激活码</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SECRET = '';
+var ALL_CODES = [];
+var CURRENT_FILTER = 'all';
+var NEW_CODE_VAL = '';
+
+function doLogin(){
+  SECRET = document.getElementById('secret-input').value.trim();
+  if(!SECRET){document.getElementById('login-msg').textContent='请输入密钥';return;}
+  fetch('/api/admin/codes?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok){document.getElementById('login-msg').textContent='密钥错误，请重试';return;}
+      document.getElementById('login-view').style.display='none';
+      document.getElementById('admin-view').style.display='block';
+      renderData(d);
+    })
+    .catch(function(){document.getElementById('login-msg').textContent='连接失败，请确认服务器已启动';});
+}
+
+function loadData(){
+  fetch('/api/admin/codes?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok)renderData(d);});
+}
+
+function renderData(d){
+  ALL_CODES = d.codes||[];
+  var s=d.stats||{};
+  document.getElementById('s-total').textContent=s.total||0;
+  document.getElementById('s-activated').textContent=s.activated||0;
+  document.getElementById('s-pending').textContent=s.pending||0;
+  document.getElementById('s-unlimited').textContent=s.unlimited||0;
+  document.getElementById('s-issued').textContent=s.total_credits_issued||0;
+  document.getElementById('s-used').textContent=s.total_credits_used||0;
+  document.getElementById('last-refresh').textContent='更新于 '+new Date().toLocaleTimeString('zh');
+  renderTable();
+}
+
+function setFilter(btn){
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  CURRENT_FILTER=btn.getAttribute('data-filter');
+  renderTable();
+}
+
+function creditsTag(credits){
+  if(credits===-1) return '<span class="tag tag-unlimited">∞ 无限</span>';
+  if(credits===3)  return '<span class="tag tag-3">3 次</span>';
+  if(credits===10) return '<span class="tag tag-10">10 次</span>';
+  if(credits===30) return '<span class="tag tag-30">30 次</span>';
+  return '<span class="tag">' + credits + ' 次</span>';
+}
+
+function renderTable(){
+  var codes=ALL_CODES.filter(function(c){
+    if(CURRENT_FILTER==='pending')   return !c.activated;
+    if(CURRENT_FILTER==='activated') return c.activated;
+    if(CURRENT_FILTER==='unlimited') return c.credits===-1;
+    return true;
+  });
+  var tbody=document.getElementById('codes-tbody');
+  document.getElementById('codes-empty').style.display=codes.length?'none':'block';
+  tbody.innerHTML='';
+  codes.slice().reverse().forEach(function(c){
+    var used=c.credits_used||0;
+    var total=c.credits===-1?'∞':c.credits;
+    var pct=c.credits===-1?50:Math.min(100,Math.round(used/(c.credits||1)*100));
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><span class="code-text" onclick="copyCode(\''+c.code+'\')">'+c.code+'</span></td>'+
+      '<td>'+escHtml(c.wechat_name||'-')+'</td>'+
+      '<td>'+creditsTag(c.credits)+'</td>'+
+      '<td><div style="font-size:11px;color:var(--ts)">'+used+' / '+total+'</div>'+
+        (c.credits!==-1?'<div class="progress"><div class="progress-fill" style="width:'+pct+'%"></div></div>':'')+'</td>'+
+      '<td>'+(c.activated?'<span class="status-ok">✓ 已激活</span>':'<span class="status-pend">◌ 未激活</span>')+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+(c.created_at?fmtDate(c.created_at):'-')+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+(c.activated_at?fmtDate(c.activated_at):'-')+'</td>'+
+      '<td style="font-size:11px;color:var(--td)">'+escHtml(c.note||'')+'</td>'+
+      '<td><button class="btn-danger" onclick="revokeCode(\''+c.code+'\')">撤销</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function fmtDate(iso){
+  var d=new Date(iso);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function copyCode(code){
+  navigator.clipboard.writeText(code).then(function(){
+    var msg=document.createElement('div');
+    msg.style.cssText='position:fixed;top:16px;right:16px;background:rgba(201,168,76,0.18);border:0.5px solid var(--bs);border-radius:7px;padding:8px 16px;font-size:12px;color:var(--gold);z-index:9999';
+    msg.textContent='已复制：'+code;
+    document.body.appendChild(msg);
+    setTimeout(function(){msg.remove();},1800);
+  });
+}
+
+function copyNewCode(){copyCode(NEW_CODE_VAL);}
+
+function generateCode(){
+  var wechat=document.getElementById('g-wechat').value.trim();
+  var credits=parseInt(document.getElementById('g-credits').value);
+  var note=document.getElementById('g-note').value.trim();
+  var msg=document.getElementById('gen-msg');
+  if(!wechat){msg.className='msg err';msg.textContent='请输入微信昵称';return;}
+  msg.className='msg';msg.textContent='生成中…';
+  fetch('/api/admin/generate',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({secret:SECRET,credits:credits,wechat_name:wechat,note:note})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){msg.className='msg err';msg.textContent=d.message;return;}
+    msg.className='msg ok';msg.textContent='✓ 已生成';
+    NEW_CODE_VAL=d.entry.code;
+    var box=document.getElementById('new-code-box');
+    document.getElementById('new-code-text').textContent=d.entry.code;
+    var typeLabel=d.entry.credits===-1?'无限次':d.entry.credits+'次';
+    document.getElementById('new-code-meta').textContent=typeLabel+' · '+wechat+(note?' · '+note:'');
+    box.style.display='block';
+    document.getElementById('g-wechat').value='';
+    document.getElementById('g-note').value='';
+    loadData();
+  }).catch(function(){msg.className='msg err';msg.textContent='网络错误';});
+}
+
+function revokeCode(code){
+  if(!confirm('确定撤销激活码：'+code+'？此操作不可恢复。'))return;
+  fetch('/api/admin/revoke',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({secret:SECRET,code:code})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok)loadData();
+    else alert(d.message);
+  });
+}
+
+// Enter 键登录
+document.getElementById('secret-input').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>

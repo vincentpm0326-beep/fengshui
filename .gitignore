@@ -1,0 +1,15 @@
+# 依赖包（体积大，服务器上重新安装）
+node_modules/
+
+# 敏感配置（含 API Key，绝对不能上传）
+.claude/
+
+# 激活码数据库（用户数据，不上传）
+data/
+
+# 系统文件
+.DS_Store
+*.log
+
+# 旧版本目录
+optimized-cma/
