@@ -24,28 +24,9 @@ if(!process.env.INTERNAL_TOKEN){
 }
 
 // ═══ 安全：CORS 白名单（只允许自己的域名） ═══
-const ALLOWED_ORIGINS = [
-  'https://aicopy.me',
-  'https://www.aicopy.me',
-  'http://localhost:3366',
-  'http://127.0.0.1:3366',
-  'http://47.237.74.1',
-  `http://47.237.74.1:80`,
-];
-// 临时穿透域名（trycloudflare.com / ngrok 等）
-const ALLOWED_ORIGIN_PATTERNS = [
-  /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/,
-  /^https:\/\/[a-z0-9-]+\.ngrok[-.]io$/,
-  /^https:\/\/[a-z0-9-]+\.ngrok-free\.app$/,
-];
+// CORS：放开所有来源，安全由 X-CMA-Token 令牌保证
 app.use(cors({
-  origin: function(origin, cb){
-    // 无 origin（直接IP访问、服务器内部调用）全部允许
-    if(!origin) return cb(null, true);
-    if(ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    if(ALLOWED_ORIGIN_PATTERNS.some(p => p.test(origin))) return cb(null, true);
-    cb(new Error('CORS 拒绝：不在白名单'));
-  },
+  origin: true,
   methods: ['GET','POST'],
   allowedHeaders: ['Content-Type','X-CMA-Token'],
 }));
