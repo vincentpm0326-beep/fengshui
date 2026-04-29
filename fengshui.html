@@ -54,13 +54,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .dg{background:#2A8A56}.dw{background:var(--gold-b)}.db{background:#8B1A1A}
 .frow{display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;padding:12px;background:var(--ink3);border-radius:8px;border:1px solid var(--b)}
 .frow:last-child{margin-bottom:0}
-.ft{font-size:13px;color:var(--tp);line-height:1.75;font-weight:500}
-.fs{font-size:12px;color:var(--ts);margin-top:5px;line-height:1.7;padding-left:8px;border-left:2px solid var(--b)}
+.ft{font-size:13px;color:var(--tp);line-height:1.75;font-weight:500;white-space:pre-line}
+.fs{font-size:12px;color:var(--ts);margin-top:5px;line-height:1.7;padding-left:8px;border-left:2px solid var(--b);white-space:pre-line}
 .aibox{background:linear-gradient(135deg,rgba(30,45,94,0.03),rgba(139,100,16,0.03));border:1px solid var(--b);border-radius:12px;padding:14px;margin-top:12px}
 .ailbl{font-size:10px;color:var(--navy);letter-spacing:0.14em;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-weight:700}
 .aidot{width:5px;height:5px;background:var(--gold-b);border-radius:50%;animation:blink 1.2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
-.aitxt{font-size:13px;color:var(--tp);line-height:2}
+.aitxt{font-size:13px;color:var(--tp);line-height:2;white-space:pre-line}
 .errbox{background:rgba(139,26,26,.06);border:1px solid rgba(139,26,26,.2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#8B1A1A;line-height:1.6;display:none}
 .errbox.on{display:block}
 .loading{text-align:center;padding:40px 20px;color:var(--ts);font-size:13px;display:none}
@@ -204,7 +204,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .report-block{background:var(--ink3);border:1px solid var(--b);border-radius:8px;padding:12px}
 .report-block.full{grid-column:1/-1}
 .report-k{font-size:10px;color:var(--gdim);font-weight:700;letter-spacing:.12em;margin-bottom:7px}
-.report-v{font-size:13px;color:var(--tp);line-height:1.8}
+.report-v{font-size:13px;color:var(--tp);line-height:1.8;white-space:pre-line}
 .mini-pills{display:flex;flex-wrap:wrap;gap:6px}
 
 /* 追问功能 */

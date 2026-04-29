@@ -268,10 +268,10 @@ function activateCode() {
 var P = {
 
   fengshui: function(room, focus, desc) {
-    return '你是精通《葬书》环境风水、三元玄空飞星与八宅明镜的资深风水堪舆师。请以专业师傅口吻，给出逻辑严密、可落地的风水详批，避免恐吓式、绝对化表达。\n\n' +
+    return '你是资深风水堪舆师。请像到现场看完格局后当面解释一样，用白话给出可落地的风水详批，避免恐吓式、绝对化表达。\n\n' +
       '以下是用户描述的【' + room + '】空间布局，请完全基于此描述进行专业风水诊断（不得添加描述中未提及的信息）：\n\n' +
       '【空间描述】\n' + desc + '\n\n分析侧重：' + focus + '\n\n' +
-      '请进行深度系统分析，每项发现必须包含详细解释（不少于30字），改善建议必须具体可操作：\n\n' +
+      '请进行深度分析，但表达必须口语化：少用术语，必须使用术语时马上解释成日常影响。每项发现必须包含详细解释（不少于30字），改善建议必须具体可操作：\n\n' +
       '① 纳气格局——气口（门窗）位置、朝向是否合理，气流走向，旺气是否能顺利进入\n' +
       '② 藏风聚气——家具布局是否形成环抱之势，主位是否有靠山，明堂是否宽敞\n' +
       '③ 五行平衡——现有元素的五行属性分析，缺什么、过旺什么，如何补救\n' +
@@ -279,29 +279,29 @@ var P = {
       '⑤ 吉位激活——精确确定财位、文昌位、桃花位的具体位置与激活方法\n\n' +
       '严格返回JSON，不输出任何其他内容：\n' +
       '{"score":整数50-95,' +
-      '"score_reason":"评分理由，说明扣分和加分项，50字以内",' +
+      '"score_reason":"用白话说明扣分和加分项，50字以内",' +
       '"room_detected":"' + room + '",' +
-      '"findings":[{"type":"good或warn或bad","text":"具体发现，需详细说明原因与影响，不少于30字","suggestion":"具体可操作的改善方案，不少于30字","detail":"深度解释：该问题的风水原理与长期影响，不少于40字"}],' +
-      '"deep_analysis":{"qi_flow":"气流格局深度分析，80字以上","five_elements":"五行平衡分析，说明目前五行比例与建议，80字以上","sha_analysis":"形煞完整评估，无形煞时说明气场优势，60字以上","lucky_positions":"各吉位精确位置与激活方案，80字以上","improvement_priority":"按优先级列出改善步骤，100字以上"},' +
-      '"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"具体运势影响","how_to_use":"如何利用此方位，20字以内"}],' +
+      '"findings":[{"type":"good或warn或bad","text":"用户能看懂的具体发现，说明原因与影响，不少于30字","suggestion":"具体可操作的改善方案，不少于30字","detail":"用白话解释这个问题长期会影响什么，不少于40字"}],' +
+      '"deep_analysis":{"qi_flow":"用白话说明门窗、动线和气流是否顺，80字以上","five_elements":"用颜色、材质、光线等日常语言说明五行是否偏重，80字以上","sha_analysis":"说明是否有冲门、压梁、尖角等问题，以及会带来什么感受，60字以上","lucky_positions":"说明哪里更适合放书桌、沙发、财位物品，80字以上","improvement_priority":"按先后顺序列出最该改的3件事，100字以上"},' +
+      '"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"用白话说明具体好处","how_to_use":"如何利用此方位，20字以内"}],' +
       '"items":["具体风水物品及摆放位置"],' +
       '"remove":["需要移除或调整的物品，无则空数组"],' +
-      '"energy_model":"[五行气势] 用百分比描述空间五行分布与气场状态，40字以内",' +
-      '"risk_warning":"[风险预警] 未来30天内需要避开的方位或行为（至少2条），40字以内",' +
-      '"physical_remedy":"[物理补救] 3个具体的居家/办公位调整动作，每条20字以内，numbered list",' +
-      '"master_comment":"大师综合断语，结合实际描述分析当前气场整体状况、主要问题与长期环境影响，200字以上"}';
+      '"energy_model":"用白话描述空间五行分布与气场状态，40字以内",' +
+      '"risk_warning":"未来30天内需要避开的方位或行为（至少2条），40字以内",' +
+      '"physical_remedy":"3个具体的居家/办公位调整动作，每条20字以内，numbered list",' +
+      '"master_comment":"大师总评，用白话说明整体好不好、最该改什么、改完有什么帮助，200字以上"}';
   },
 
   generateReport: function(prompt) {
-    return prompt + '\n\n严格返回JSON，不输出任何其他内容。deep_analysis中每个字段不少于要求字数，master_comment不少于200字。';
+    return prompt + '\n\n严格返回JSON，不输出任何其他内容。所有面向用户的文字必须口语化，少用术语；deep_analysis中每个字段不少于要求字数，master_comment不少于200字。';
   },
 
   fengshuiVision: function(room, focus, doorDir) {
-    return '你是精通《葬书》环境风水、三元玄空飞星与八宅明镜的资深风水堪舆师。请以专业师傅口吻，依据图片可见信息给出风水详批，避免恐吓式、绝对化表达。\n\n' +
+    return '你是资深风水堪舆师。请像到现场看完格局后当面解释一样，依据图片可见信息给出白话、可执行的风水详批，避免恐吓式、绝对化表达。\n\n' +
       '请仔细观察我上传的【' + room + '】图片，仅基于图片中直接可见的内容进行专业风水诊断（不得臆测看不到的信息）。\n' +
       '分析侧重：' + focus + '\n' +
       (doorDir ? '入户门朝向（用户补充）：' + doorDir + '\n' : '') +
-      '\n从图片中识别并深度分析五个维度（每项发现须结合图片实际内容，改善建议须具体可操作）：\n\n' +
+      '\n从图片中识别并分析五个维度（每项发现须结合图片实际内容，改善建议须具体可操作；少用术语，必须使用术语时马上解释成日常影响）：\n\n' +
       '① 纳气格局——识别图片中门窗位置与气口朝向，分析气流走向\n' +
       '② 藏风聚气——评估家具环抱格局、主位靠山、明堂宽敞度\n' +
       '③ 五行平衡——分析图片呈现的颜色、材质、形状对应的五行属性，指出缺失与过旺\n' +
@@ -309,14 +309,14 @@ var P = {
       '⑤ 吉位激活——确定财位、文昌位、桃花位的具体位置与激活方案\n\n' +
       '如有多张图片请综合分析。严格返回JSON，不输出任何其他内容：\n' +
       '{"score":整数50-95,' +
-      '"score_reason":"评分理由，说明主要加分与扣分项，50字以内",' +
+      '"score_reason":"用白话说明主要加分与扣分项，50字以内",' +
       '"room_detected":"' + room + '",' +
-      '"findings":[{"type":"good或warn或bad","text":"基于图片的具体发现，不少于30字","suggestion":"具体可操作的改善方案，不少于25字","detail":"风水原理与长期影响，不少于30字"}],' +
-      '"deep_analysis":{"qi_flow":"气流格局分析，60字以上","five_elements":"五行平衡分析，60字以上","sha_analysis":"形煞评估，60字以上","lucky_positions":"吉位位置与激活方案，60字以上","improvement_priority":"按优先级的改善步骤，80字以上"},' +
-      '"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"具体运势影响","how_to_use":"利用方式，20字以内"}],' +
+      '"findings":[{"type":"good或warn或bad","text":"基于图片的具体发现，用白话说明，不少于30字","suggestion":"具体可操作的改善方案，不少于25字","detail":"用白话解释长期影响，不少于30字"}],' +
+      '"deep_analysis":{"qi_flow":"用白话说明气流和动线是否顺，60字以上","five_elements":"用颜色、材质、光线等日常语言说明五行是否偏重，60字以上","sha_analysis":"说明是否有冲门、压梁、尖角等问题，以及会带来什么感受，60字以上","lucky_positions":"说明哪里适合放书桌、沙发、财位物品，60字以上","improvement_priority":"按先后顺序列出改善步骤，80字以上"},' +
+      '"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"用白话说明具体好处","how_to_use":"利用方式，20字以内"}],' +
       '"items":["具体风水物品及摆放位置"],' +
       '"remove":["需移除或调整的物品，无则空数组"],' +
-      '"master_comment":"大师综合总评，结合图片实际情况深度分析，150字以上"}';
+      '"master_comment":"大师总评，用白话说明整体好不好、最该改什么、改完有什么帮助，150字以上"}';
   },
 
   dream: function(emotion, subjects, time, text) {
@@ -326,28 +326,28 @@ var P = {
     if(time) ctx+='梦境时间：'+time+'\n';
     if(text) ctx+='补充细节：'+text+'\n';
     if(!ctx.trim()) ctx='（用户未填写具体信息，请根据常见梦境规律进行通用解析）\n';
-    return '你是精通传统梦象、道家符象与身心状态解读的解梦师。请以稳健、专业的口吻解读梦中意象、五行气机与近期提醒，避免恐吓式、绝对化表达。\n\n' +
+    return '你是资深解梦师。请像师傅听完梦境后当面解释一样，用白话解读梦中意象、醒来感受与近期提醒，避免恐吓式、绝对化表达。\n\n' +
       '用户梦境信息如下：\n' + ctx + '\n' +
-      '请从三个维度进行深度解析：\n' +
+      '请从三个维度进行解析，表达要口语化，少用术语，必须使用“五行、象意”等词时要解释清楚：\n' +
       '① 潜意识信号——识别每个核心意象，对照周公解梦与荣格原型，解释象征含义（每个意象至少40字）\n' +
       '② 时空规律——判断此梦对应的五行能量，分析与近期各方面运势的关联，给出0-100的运势强度评分\n' +
       '③ 行动建议——给出今日立即可执行的1个具体调整动作\n\n' +
       '严格返回JSON，不输出任何其他内容：\n' +
-      '{"summary":"梦境整体解读，深度分析氛围与象征主题，不少于120字",' +
+      '{"summary":"用白话说明这个梦主要在提醒什么，不少于120字",' +
       '"element":"梦境主五行（木/火/土/金/水）",' +
       '"omen":"good或warn或bad",' +
-      '"symbols":[{"icon":"emoji","name":"意象名称","meaning":"象征含义与五行对应，不少于40字","type":"吉或凶或中","significance":"对梦者的具体启示，20字以内"}],' +
-      '"prediction":"综合近30天运势预测，不少于80字",' +
+      '"symbols":[{"icon":"emoji","name":"意象名称","meaning":"用白话解释这个意象代表的情绪或现实牵挂，不少于40字","type":"吉或凶或中","significance":"对梦者的具体提醒，20字以内"}],' +
+      '"prediction":"近30天状态提醒，用白话说，不少于80字",' +
       '"aspects":{"career":{"text":"事业运势，25字","score":整数30-95},"wealth":{"text":"财运预测，25字","score":整数30-95},"relationship":{"text":"感情运势，25字","score":整数30-95},"health":{"text":"健康提示，25字","score":整数30-95}},' +
       '"remedy":"有凶象时：具体化解方法，无凶象则为空字符串",' +
       '"advice":"今日立即可做的1个具体行动，结合梦境内容，40字以内",' +
-      '"master_comment":"大师综合断语，不少于120字"}';
+      '"master_comment":"大师总评，用白话说清这个梦的核心意思，不少于120字"}';
   },
 
   almanac: function(dateStr) {
-    return '你是精通《奇门遁甲》、六壬神课与中国传统黄历历法的择日师。请以专业师傅口吻推断今日宜忌、吉时方位与事项取舍，避免恐吓式、绝对化表达。\n\n' +
+    return '你是资深择日师。请用普通人听得懂的话推断今日宜忌、吉时方位与事项取舍，避免绝对化表达。\n\n' +
       '今日公历日期：' + dateStr + '\n\n' +
-      '请完成以下推算（每项必须有实质内容，不得敷衍）：\n' +
+      '请完成以下推算（每项必须有实质内容，不得敷衍；术语后面要接一句白话解释）：\n' +
       '① 换算今日天干地支（年柱、月柱、日柱），说明日柱五行属性\n' +
       '② 根据日柱五行、十二建除、黄道黑道推算今日宜忌（宜至少5项，忌至少3项，每项要具体）\n' +
       '③ 推算今日当值吉神（至少2个，需说明含义）与凶煞（至少1个，需说明影响）\n' +
@@ -356,16 +356,16 @@ var P = {
       '严格返回JSON，不输出任何其他内容：\n' +
       '{"ganzhi":"完整干支如甲子日",' +
       '"day_element":"日柱五行",' +
-      '"lucky_gods":[{"name":"吉神名","meaning":"含义与今日影响，20字以内"}],' +
-      '"bad_gods":[{"name":"凶煞名","meaning":"影响与注意事项，20字以内"}],' +
-      '"yi":["宜1（具体说明）","宜2","宜3","宜4","宜5"],' +
-      '"ji":["忌1（具体说明）","忌2","忌3"],' +
+      '"lucky_gods":[{"name":"吉神名","meaning":"用白话说明今天适合带来什么帮助，20字以内"}],' +
+      '"bad_gods":[{"name":"凶煞名","meaning":"用白话说明今天要注意什么，20字以内"}],' +
+      '"yi":["宜做事项+一句具体说明","宜2","宜3","宜4","宜5"],' +
+      '"ji":["忌做事项+一句具体说明","忌2","忌3"],' +
       '"lucky_hours":[{"name":"时辰名","time":"时间段","suitable":"适合做什么"},{"name":"时辰名","time":"时间段","suitable":"适合做什么"}],' +
       '"lucky_dirs":["方位1","方位2"],' +
       '"lucky_colors":["颜色1（对应五行）","颜色2（对应五行）"],' +
       '"elements":{"wood":整数,"fire":整数,"earth":整数,"metal":整数,"water":整数},' +
-      '"risk_warning":"[风险预警] 今日需避开的方位或行为（2条），30字以内",' +
-      '"day_summary":"今日黄历总断，结合日柱五行、吉神凶煞与事项取舍，不少于100字"}';
+      '"risk_warning":"今日需避开的方位或行为（2条），30字以内",' +
+      '"day_summary":"今日总断，用白话说明适合推进什么、什么要慢一点，不少于100字"}';
   },
 
   bazi: function(date, time, gender, baziStr, wxStr, dayuns, liuNian) {
@@ -488,7 +488,7 @@ function callAPI(content, tokens, ok, fail, images, moduleKey) {
     if(d.error){fail(d.error.message);return;}
     var txt=''; (d.content||[]).forEach(function(c){if(c.type==='text')txt+=c.text;});
     // 剥除 markdown 代码围栏再判断是否 JSON
-    var stripped=txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    var stripped=normalizeJsonText(txt);
     var s=stripped.indexOf('{'),e=stripped.lastIndexOf('}');
     if(s>=0&&e>s){
       try{reportUsage();ok(JSON.parse(stripped.substring(s,e+1)));}
@@ -496,6 +496,15 @@ function callAPI(content, tokens, ok, fail, images, moduleKey) {
     } else { reportUsage();ok(stripped); }
   })
   .catch(function(){ fail('代理连接失败，请确认 proxy.js 已启动'); });
+}
+
+function normalizeJsonText(s){
+  return String(s||'')
+    .replace(/```json\s*/gi,'')
+    .replace(/```\s*/g,'')
+    .replace(/[“”]/g,'"')
+    .replace(/[‘’]/g,"'")
+    .trim();
 }
 
 function renderPromptFromBackend(key, vars, fallback, ok) {
@@ -761,7 +770,7 @@ function normalizeAskText(v){
 }
 
 function cleanJsonishText(s){
-  return String(s||'').replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  return normalizeJsonText(s);
 }
 
 function cleanDisplayMarkdown(s){
@@ -775,6 +784,21 @@ function cleanDisplayMarkdown(s){
     .replace(/^[ \t]*>[ \t]*/gm,'')
     .replace(/^[ \t]*[-*]\s+/gm,'• ')
     .replace(/^[ \t]*[✅⚠️]\s*/gm,'')
+    .replace(/^\s*\{\s*\}\s*$/gm,'')
+    .replace(/^\s*\{\s*$/gm,'')
+    .replace(/^\s*\}\s*$/gm,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function readableText(v){
+  if(v == null) return '';
+  var s = typeof v === 'object' ? (v.analysis||v.summary||v.text||v.suggestion||JSON.stringify(v)) : String(v);
+  return cleanDisplayMarkdown(s)
+    .replace(/[ \t]+/g,' ')
+    .replace(/([。！？；])(?=\S)/g,'$1\n')
+    .replace(/\s*(?=([一二三四五六七八九十]+|[0-9]+)[、.．]\s*)/g,'\n')
+    .replace(/\s*•\s*/g,'\n• ')
     .replace(/\n{3,}/g,'\n\n')
     .trim();
 }
@@ -898,21 +922,21 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
     var d=normalizeQuickAskData(j.data||{});
     document.getElementById('ask-category').textContent=j.category_label||cls.label;
-    document.getElementById('ask-summary').textContent=normalizeAskText(d.summary)||'已完成基础判断';
-    document.getElementById('ask-analysis').textContent=normalizeAskText(d.analysis);
+    document.getElementById('ask-summary').textContent=readableText(normalizeAskText(d.summary))||'已完成基础判断';
+    document.getElementById('ask-analysis').textContent=readableText(normalizeAskText(d.analysis));
     var actions=document.getElementById('ask-actions');actions.innerHTML='';
     arrify(d.actions).forEach(function(a){
       var div=document.createElement('div');
       div.className='ask-action';
-      div.textContent=a;
+      div.textContent=readableText(a);
       actions.appendChild(div);
     });
-    document.getElementById('ask-upgrade').textContent=d.upgrade_hint||d.timing||'可继续请师傅详批命理、财运或风水。';
+    document.getElementById('ask-upgrade').textContent=readableText(d.upgrade_hint||d.timing||'可继续请师傅详批命理、财运或风水。');
     if((j.needs_birth || d.need_birth) && panel){
       panel.classList.add('show');
       document.getElementById('ask-upgrade').textContent='补充生辰后，师傅可合参八字、大运与流年，判断会更贴合你本人。';
     }
-    document.getElementById('ask-consult').textContent=d.consult_hint||'涉及买房、投资、婚姻、开业等高成本决策时，建议进一步真人咨询。';
+    document.getElementById('ask-consult').textContent=readableText(d.consult_hint||'涉及买房、投资、婚姻、开业等高成本决策时，建议进一步真人咨询。');
     renderQuickAskCtas(j.category||cls.category);
     document.getElementById('ask-result').classList.add('show');
     if(j.warning&&d.fallback){
@@ -1140,7 +1164,7 @@ function renderReport(d){
   var sc=d.score||70;
   document.getElementById('snum').textContent=sc;
   document.getElementById('rtitle').textContent=(d.room_detected||'')+'风水深度分析报告';
-  document.getElementById('score-desc').textContent=d.score_reason||'';
+  document.getElementById('score-desc').textContent=readableText(d.score_reason||'');
   setTimeout(function(){document.getElementById('scorefill').style.width=sc+'%';},300);
 
   var fl=document.getElementById('findings');fl.innerHTML='';
@@ -1148,9 +1172,9 @@ function renderReport(d){
     var c=f.type==='good'?'dg':f.type==='warn'?'dw':'db';
     var el=document.createElement('div');el.className='frow';
     el.innerHTML='<div class="dot '+c+'" style="margin-top:4px"></div><div style="flex:1">' +
-      '<div class="ft" contenteditable="true">'+f.text+'</div>' +
-      (f.detail?'<div style="font-size:12px;color:var(--td);margin-top:4px;line-height:1.7;font-style:italic">'+f.detail+'</div>':'') +
-      (f.suggestion?'<div class="fs" contenteditable="true">✦ '+f.suggestion+'</div>':'') +
+      '<div class="ft" contenteditable="true">'+readableText(f.text)+'</div>' +
+      (f.detail?'<div style="font-size:12px;color:var(--td);margin-top:4px;line-height:1.7;font-style:italic;white-space:pre-line">'+readableText(f.detail)+'</div>':'') +
+      (f.suggestion?'<div class="fs" contenteditable="true">✦ '+readableText(f.suggestion)+'</div>':'') +
       '</div>';
     fl.appendChild(el);
   });
@@ -1172,7 +1196,7 @@ function renderReport(d){
       daEl.insertAdjacentHTML('beforeend',
         '<div style="margin-bottom:13px;padding:12px;background:var(--ink3);border-radius:8px;border:0.5px solid var(--b)">' +
         '<div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:7px;letter-spacing:.08em">'+item.label+'</div>' +
-        '<div style="font-size:13px;color:var(--tp);line-height:1.9" contenteditable="true">'+item.val+'</div></div>');
+        '<div style="font-size:13px;color:var(--tp);line-height:1.9;white-space:pre-line" contenteditable="true">'+readableText(item.val)+'</div></div>');
     });
   }
 
@@ -1181,20 +1205,20 @@ function renderReport(d){
     dg.insertAdjacentHTML('beforeend',
       '<div class="dc"><div class="dn">'+dir.dir+'</div>' +
       '<div class="dcn">'+dir.element+'·'+dir.gua+'</div>' +
-      '<div class="dl">'+dir.benefit+'</div>' +
-      (dir.how_to_use?'<div style="font-size:10px;color:var(--td);margin-top:3px;line-height:1.4">'+dir.how_to_use+'</div>':'') +
+      '<div class="dl">'+readableText(dir.benefit)+'</div>' +
+      (dir.how_to_use?'<div style="font-size:10px;color:var(--td);margin-top:3px;line-height:1.4">'+readableText(dir.how_to_use)+'</div>':'') +
       '</div>');
   });
 
   var il=document.getElementById('items');il.innerHTML='';
-  (d.items||[]).forEach(function(it){il.insertAdjacentHTML('beforeend','<span class="pill pt" contenteditable="true">'+it+'</span>');});
+  (d.items||[]).forEach(function(it){il.insertAdjacentHTML('beforeend','<span class="pill pt" contenteditable="true">'+readableText(it)+'</span>');});
   var rs=document.getElementById('removes');rs.innerHTML='';
   if(d.remove&&d.remove.length){
     document.getElementById('remove-section').style.display='block';
-    d.remove.forEach(function(it){rs.insertAdjacentHTML('beforeend','<span class="pill pr" contenteditable="true">'+it+'</span>');});
+    d.remove.forEach(function(it){rs.insertAdjacentHTML('beforeend','<span class="pill pr" contenteditable="true">'+readableText(it)+'</span>');});
   }
 
-  document.getElementById('comment').textContent=d.master_comment||'';
+  document.getElementById('comment').textContent=readableText(d.master_comment||'');
 
   // 保存报告 context 用于追问
   reportContext='房间：'+(d.room_detected||'')+'，气场评分：'+sc+'。'+'\n核心发现：'+(d.findings||[]).map(function(f){return f.text;}).join('；')+'。\n大师总评：'+(d.master_comment||'');
@@ -1370,7 +1394,7 @@ document.getElementById('dreambtn').addEventListener('click',function(){
       document.getElementById('dreamres').style.display='block';
 
       // 整体解读
-      document.getElementById('dreamout').textContent=j.summary||'';
+      document.getElementById('dreamout').textContent=readableText(j.summary||'');
       document.getElementById('dream-el').textContent=j.element||'--';
       var oe=document.getElementById('dream-omen');
       oe.textContent=j.omen==='good'?'吉象':j.omen==='bad'?'凶兆':'警示';
@@ -1384,13 +1408,13 @@ document.getElementById('dreambtn').addEventListener('click',function(){
           '<div style="background:var(--ink3);border:0.5px solid var(--b);border-left:3px solid '+c+';border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">'+
           '<div style="font-size:24px;flex-shrink:0">'+sym.icon+'</div>'+
           '<div><div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:4px">'+sym.name+' <span style="font-size:11px;color:'+c+'">'+sym.type+'</span></div>'+
-          '<div style="font-size:12px;color:var(--tp);line-height:1.7">'+sym.meaning+'</div>'+
-          (sym.significance?'<div style="font-size:11px;color:var(--ts);margin-top:4px">启示：'+sym.significance+'</div>':'')+
+          '<div style="font-size:12px;color:var(--tp);line-height:1.7;white-space:pre-line">'+readableText(sym.meaning)+'</div>'+
+          (sym.significance?'<div style="font-size:11px;color:var(--ts);margin-top:4px;white-space:pre-line">启示：'+readableText(sym.significance)+'</div>':'')+
           '</div></div>');
       });
 
       // 运势预测文字
-      document.getElementById('dream-pred').textContent=j.prediction||'';
+      document.getElementById('dream-pred').textContent=readableText(j.prediction||'');
 
       // 四象限环形图
       var asp=j.aspects;
@@ -1411,7 +1435,7 @@ document.getElementById('dreambtn').addEventListener('click',function(){
             '<div class="aspect-ring-wrap" style="--pct:'+score+';--rc:'+a.color+'">'+
             '<div class="aspect-ring-inner">'+a.icon+'</div></div>'+
             '<div class="aspect-lbl">'+a.n+'</div>'+
-            '<div class="aspect-txt">'+txt2+'</div>'+
+            '<div class="aspect-txt">'+readableText(txt2)+'</div>'+
             '</div>');
         });
       }
@@ -1419,16 +1443,16 @@ document.getElementById('dreambtn').addEventListener('click',function(){
       // 化解方案
       if(j.remedy&&j.remedy.length>2){
         document.getElementById('dream-remedy-section').style.display='block';
-        document.getElementById('dream-remedy').textContent=j.remedy;
+        document.getElementById('dream-remedy').textContent=readableText(j.remedy);
       }
 
       // 顾问总评
-      document.getElementById('dream-master').textContent=j.master_comment||'';
+      document.getElementById('dream-master').textContent=readableText(j.master_comment||'');
 
       // 行动建议
       if(j.advice&&j.advice.length>2){
         document.getElementById('dream-action-card').style.display='block';
-        document.getElementById('dream-advice').textContent=j.advice;
+        document.getElementById('dream-advice').textContent=readableText(j.advice);
       }
 
       var label=(DREAM_EMOTION||'梦境')+(DREAM_SUBJECTS.length?'·'+DREAM_SUBJECTS[0]:'');
@@ -1494,18 +1518,18 @@ document.getElementById('alm-btn').addEventListener('click',function(){
       (j.lucky_gods||[]).forEach(function(g){
         var name=typeof g==='string'?g:g.name;
         var meaning=typeof g==='object'?g.meaning:'';
-        gods.insertAdjacentHTML('beforeend','<div class="god-good" title="'+meaning+'">'+name+(meaning?' · '+meaning:'')+'</div>');
+        gods.insertAdjacentHTML('beforeend','<div class="god-good" title="'+readableText(meaning)+'">'+readableText(name)+(meaning?' · '+readableText(meaning):'')+'</div>');
       });
       (j.bad_gods||[]).forEach(function(g){
         var name=typeof g==='string'?g:g.name;
         var meaning=typeof g==='object'?g.meaning:'';
-        gods.insertAdjacentHTML('beforeend','<div class="god-bad" title="'+meaning+'">'+name+(meaning?' · '+meaning:'')+'</div>');
+        gods.insertAdjacentHTML('beforeend','<div class="god-bad" title="'+readableText(meaning)+'">'+readableText(name)+(meaning?' · '+readableText(meaning):'')+'</div>');
       });
 
       var yi=document.getElementById('alm-yi');yi.innerHTML='';
-      (j.yi||[]).forEach(function(t){yi.insertAdjacentHTML('beforeend','<span class="pill pt">'+t+'</span>');});
+      (j.yi||[]).forEach(function(t){yi.insertAdjacentHTML('beforeend','<span class="pill pt">'+readableText(t)+'</span>');});
       var ji=document.getElementById('alm-ji');ji.innerHTML='';
-      (j.ji||[]).forEach(function(t){ji.insertAdjacentHTML('beforeend','<span class="pill pr">'+t+'</span>');});
+      (j.ji||[]).forEach(function(t){ji.insertAdjacentHTML('beforeend','<span class="pill pr">'+readableText(t)+'</span>');});
 
       var h=document.getElementById('alm-hours');h.innerHTML='';
       (j.lucky_hours||[]).forEach(function(x){
@@ -1513,14 +1537,14 @@ document.getElementById('alm-btn').addEventListener('click',function(){
         var time=typeof x==='object'?x.time:'';
         var suitable=typeof x==='object'?x.suitable:'';
         h.insertAdjacentHTML('beforeend',
-          '<div class="hour-item"><div class="hour-name">'+name+'</div><div class="hour-time">'+time+'</div>'+(suitable?'<div style="font-size:10px;color:var(--td);margin-top:3px">'+suitable+'</div>':'')+'</div>');
+          '<div class="hour-item"><div class="hour-name">'+readableText(name)+'</div><div class="hour-time">'+readableText(time)+'</div>'+(suitable?'<div style="font-size:10px;color:var(--td);margin-top:3px">'+readableText(suitable)+'</div>':'')+'</div>');
       });
 
       var dr=document.getElementById('alm-dirs');dr.innerHTML='';
-      (j.lucky_dirs||[]).forEach(function(d){dr.insertAdjacentHTML('beforeend','<span class="pill pg">'+d+'</span>');});
-      (j.lucky_colors||[]).forEach(function(c){dr.insertAdjacentHTML('beforeend','<span class="pill pw">'+c+'</span>');});
+      (j.lucky_dirs||[]).forEach(function(d){dr.insertAdjacentHTML('beforeend','<span class="pill pg">'+readableText(d)+'</span>');});
+      (j.lucky_colors||[]).forEach(function(c){dr.insertAdjacentHTML('beforeend','<span class="pill pw">'+readableText(c)+'</span>');});
       if(j.elements) elBars('alm-els',j.elements);
-      document.getElementById('alm-summary').textContent=j.day_summary||'';
+      document.getElementById('alm-summary').textContent=readableText(j.day_summary||'');
 
       // 同步首页
       var pills='';
@@ -1587,32 +1611,32 @@ document.getElementById('profilebtn').addEventListener('click',function(){
       elBars('prof-els',{wood:br.elements['木'],fire:br.elements['火'],earth:br.elements['土'],metal:br.elements['金'],water:br.elements['水']});
     }
 
-    document.getElementById('prof-character').textContent=br.character||'';
-    document.getElementById('prof-energy-model').textContent=br.energy_model||'';
-    document.getElementById('prof-pattern-diagnosis').textContent=br.pattern_diagnosis||'';
-    document.getElementById('prof-risk-warning').textContent=br.risk_warning||'';
+    document.getElementById('prof-character').textContent=readableText(br.character||'');
+    document.getElementById('prof-energy-model').textContent=readableText(br.energy_model||'');
+    document.getElementById('prof-pattern-diagnosis').textContent=readableText(br.pattern_diagnosis||'');
+    document.getElementById('prof-risk-warning').textContent=readableText(br.risk_warning||'');
 
     var remedy=document.getElementById('prof-physical-remedy'); remedy.innerHTML='';
     arrify(br.physical_remedy).forEach(function(item){
-      remedy.insertAdjacentHTML('beforeend','<span class="pill pt">'+item+'</span>');
+      remedy.insertAdjacentHTML('beforeend','<span class="pill pt">'+readableText(item)+'</span>');
     });
 
     var yi=document.getElementById('prof-yi'); yi.innerHTML='';
     arrify(br.decision_advice&&br.decision_advice.yi).forEach(function(item){
-      yi.insertAdjacentHTML('beforeend','<span class="pill pg">'+item+'</span>');
+      yi.insertAdjacentHTML('beforeend','<span class="pill pg">'+readableText(item)+'</span>');
     });
     var ji=document.getElementById('prof-ji'); ji.innerHTML='';
     arrify(br.decision_advice&&br.decision_advice.ji).forEach(function(item){
-      ji.insertAdjacentHTML('beforeend','<span class="pill pr">'+item+'</span>');
+      ji.insertAdjacentHTML('beforeend','<span class="pill pr">'+readableText(item)+'</span>');
     });
 
     var pf=document.getElementById('prof-findings');pf.innerHTML='';
-    if(br.pattern_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">格局判断依据</div><div class="fs">'+br.pattern_reason+'</div></div></div>');
-    if(br.strength_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">日主强弱依据</div><div class="fs">'+br.strength_reason+'</div></div></div>');
-    if(br.shen_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">喜用忌神分析</div><div class="fs">'+br.shen_reason+'</div></div></div>');
+    if(br.pattern_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">格局判断依据</div><div class="fs">'+readableText(br.pattern_reason)+'</div></div></div>');
+    if(br.strength_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">日主强弱依据</div><div class="fs">'+readableText(br.strength_reason)+'</div></div></div>');
+    if(br.shen_reason)pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot dw"></div><div><div class="ft">喜用忌神分析</div><div class="fs">'+readableText(br.shen_reason)+'</div></div></div>');
     (br.findings||[]).forEach(function(f){
       var c=f.type==='good'?'dg':'dw';
-      pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot '+c+'"></div><div><div class="ft">'+f.text+'</div>'+(f.suggestion?'<div class="fs">'+f.suggestion+'</div>':'')+'</div></div>');
+      pf.insertAdjacentHTML('beforeend','<div class="frow"><div class="dot '+c+'"></div><div><div class="ft">'+readableText(f.text)+'</div>'+(f.suggestion?'<div class="fs">'+readableText(f.suggestion)+'</div>':'')+'</div></div>');
     });
 
     var yr=document.getElementById('prof-yearly');yr.innerHTML='';
@@ -1621,19 +1645,19 @@ document.getElementById('profilebtn').addEventListener('click',function(){
       yr.insertAdjacentHTML('beforeend',
         '<div class="yearly-item"><div class="yearly-year">'+y.year+(y.ganzhi?'<div style="font-size:9px;color:var(--ts)">'+y.ganzhi+'</div>':'')+'</div>' +
         '<div class="yearly-dot '+c+'" style="margin-top:4px"></div>' +
-        '<div class="yearly-body"><div class="yearly-text">'+y.forecast+'</div>' +
-        (y.key_period?'<div class="yearly-advice">关键节点：'+y.key_period+'</div>':'') +
+        '<div class="yearly-body"><div class="yearly-text">'+readableText(y.forecast)+'</div>' +
+        (y.key_period?'<div class="yearly-advice">关键节点：'+readableText(y.key_period)+'</div>':'') +
         '</div></div>');
     });
 
-    document.getElementById('prof-fs-intro').textContent=br.fengshui_intro||'';
+    document.getElementById('prof-fs-intro').textContent=readableText(br.fengshui_intro||'');
     var fa=br.fengshui_advice||{};
-    var ld=document.getElementById('pld');ld.innerHTML='';(fa.lucky_dirs||[]).forEach(function(d){ld.insertAdjacentHTML('beforeend','<span class="pill pg">'+d+'</span>');});
-    var lc=document.getElementById('plc');lc.innerHTML='';(fa.lucky_colors||[]).forEach(function(c){lc.insertAdjacentHTML('beforeend','<span class="pill pw">'+c+'</span>');});
-    var li=document.getElementById('pli');li.innerHTML='';(fa.lucky_items||[]).forEach(function(i){li.insertAdjacentHTML('beforeend','<span class="pill pt">'+i+'</span>');});
-    var ad=document.getElementById('pad');ad.innerHTML='';(fa.avoid_dirs||[]).forEach(function(d){ad.insertAdjacentHTML('beforeend','<span class="pill pr">'+d+'</span>');});
+    var ld=document.getElementById('pld');ld.innerHTML='';(fa.lucky_dirs||[]).forEach(function(d){ld.insertAdjacentHTML('beforeend','<span class="pill pg">'+readableText(d)+'</span>');});
+    var lc=document.getElementById('plc');lc.innerHTML='';(fa.lucky_colors||[]).forEach(function(c){lc.insertAdjacentHTML('beforeend','<span class="pill pw">'+readableText(c)+'</span>');});
+    var li=document.getElementById('pli');li.innerHTML='';(fa.lucky_items||[]).forEach(function(i){li.insertAdjacentHTML('beforeend','<span class="pill pt">'+readableText(i)+'</span>');});
+    var ad=document.getElementById('pad');ad.innerHTML='';(fa.avoid_dirs||[]).forEach(function(d){ad.insertAdjacentHTML('beforeend','<span class="pill pr">'+readableText(d)+'</span>');});
 
-    document.getElementById('prof-comment').textContent=br.master_comment||'';
+    document.getElementById('prof-comment').textContent=readableText(br.master_comment||'');
     LAST_BAZI_DATA = {data: br, date: date, gender: gender};
     try{
       localStorage.setItem('cma_birth_profile', JSON.stringify({
@@ -1702,17 +1726,17 @@ document.getElementById('w-btn').addEventListener('click',function(){
       cg.insertAdjacentHTML('beforeend',
         '<div style="font-size:13px;color:var(--tp);line-height:1.85;margin-bottom:10px;padding:10px;background:var(--ink3);border-radius:7px;border-left:3px solid var(--gold)">'+
         '<div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:5px">'+( j.caige||'财格')+'</div>'+
-        j.caige_detail+'</div>');
+        readableText(j.caige_detail)+'</div>');
     }
     (j.caige_findings||[]).forEach(function(f){
       var c=f.type==='good'?'dg':f.type==='warn'?'dw':'db';
       var el=document.createElement('div');el.className='frow';
-      el.innerHTML='<div class="dot '+c+'" style="margin-top:4px"></div><div style="flex:1"><div class="ft">'+f.text+'</div>'+(f.suggestion?'<div class="fs">✦ '+f.suggestion+'</div>':'')+'</div>';
+      el.innerHTML='<div class="dot '+c+'" style="margin-top:4px"></div><div style="flex:1"><div class="ft">'+readableText(f.text)+'</div>'+(f.suggestion?'<div class="fs">✦ '+readableText(f.suggestion)+'</div>':'')+'</div>';
       cg.appendChild(el);
     });
 
-    document.getElementById('w-zhengcai').textContent=j.zhengcai||'';
-    document.getElementById('w-piancai').textContent=j.piancai||'';
+    document.getElementById('w-zhengcai').textContent=readableText(j.zhengcai||'');
+    document.getElementById('w-piancai').textContent=readableText(j.piancai||'');
 
     var dg=document.getElementById('w-dirs');dg.innerHTML='';
     (j.directions||[]).forEach(function(dir){
@@ -1720,10 +1744,10 @@ document.getElementById('w-btn').addEventListener('click',function(){
         '<div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:10px;text-align:center">'+
         '<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:2px">'+dir.dir+'</div>'+
         '<div style="font-size:10px;color:var(--ts);margin-bottom:3px">'+dir.element+' · '+dir.role+'</div>'+
-        (dir.how?'<div style="font-size:10px;color:var(--td);line-height:1.4">'+dir.how+'</div>':'')+
+        (dir.how?'<div style="font-size:10px;color:var(--td);line-height:1.4">'+readableText(dir.how)+'</div>':'')+
         '</div>');
     });
-    document.getElementById('w-layout').textContent=j.layout||'';
+    document.getElementById('w-layout').textContent=readableText(j.layout||'');
 
     var il=document.getElementById('w-items');il.innerHTML='';
     (j.items||[]).forEach(function(it){
@@ -1733,11 +1757,11 @@ document.getElementById('w-btn').addEventListener('click',function(){
       il.insertAdjacentHTML('beforeend',
         '<div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:8px 11px;margin:3px;min-width:120px">'+
         '<div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:2px">'+name+'</div>'+
-        (pos?'<div style="font-size:10px;color:var(--ts)">📍 '+pos+'</div>':'')+
-        (eff?'<div style="font-size:10px;color:var(--td);margin-top:2px">'+eff+'</div>':'')+
+        (pos?'<div style="font-size:10px;color:var(--ts)">📍 '+readableText(pos)+'</div>':'')+
+        (eff?'<div style="font-size:10px;color:var(--td);margin-top:2px">'+readableText(eff)+'</div>':'')+
         '</div>');
     });
-    document.getElementById('w-items-detail').textContent=j.items_detail||'';
+    document.getElementById('w-items-detail').textContent=readableText(j.items_detail||'');
 
     document.getElementById('w-dayun').textContent=j.current_dayun||'--';
     var yr=document.getElementById('w-yearly');yr.innerHTML='';
@@ -1750,8 +1774,8 @@ document.getElementById('w-btn').addEventListener('click',function(){
         (y.ganzhi?'<span style="font-size:10px;color:var(--ts)">'+y.ganzhi+'</span>':'')+
         '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+(y.rating==='good'?'rgba(76,175,118,.15)':y.rating==='warn'?'rgba(201,168,76,.12)':'rgba(139,26,26,.2)')+';color:'+c+'">'+
         (y.rating==='good'?'财运旺':y.rating==='warn'?'平稳':'注意')+'</span></div>'+
-        '<div style="font-size:13px;color:var(--tp);line-height:1.8;margin-bottom:5px">'+y.wealth_trend+'</div>'+
-        (y.best_months?'<div style="font-size:11px;color:var(--gold)">旺财月份：'+y.best_months+'</div>':'')+
+        '<div style="font-size:13px;color:var(--tp);line-height:1.8;margin-bottom:5px;white-space:pre-line">'+readableText(y.wealth_trend)+'</div>'+
+        (y.best_months?'<div style="font-size:11px;color:var(--gold)">旺财月份：'+readableText(y.best_months)+'</div>':'')+
         '</div>');
     });
 
@@ -1760,13 +1784,13 @@ document.getElementById('w-btn').addEventListener('click',function(){
       tb.insertAdjacentHTML('beforeend',
         '<div style="display:flex;gap:10px;margin-bottom:9px;padding:10px;background:rgba(139,26,26,0.08);border:0.5px solid rgba(139,26,26,0.25);border-radius:7px">'+
         '<div style="font-size:13px;flex-shrink:0;margin-top:1px">⚠️</div>'+
-        '<div><div style="font-size:13px;color:var(--tp);font-weight:500;margin-bottom:3px">'+t.item+'</div>'+
-        (t.reason?'<div style="font-size:11px;color:var(--ts);margin-bottom:3px">原因：'+t.reason+'</div>':'')+
-        (t.solution?'<div style="font-size:11px;color:#7AD4C0">化解：'+t.solution+'</div>':'')+
+        '<div><div style="font-size:13px;color:var(--tp);font-weight:500;margin-bottom:3px">'+readableText(t.item)+'</div>'+
+        (t.reason?'<div style="font-size:11px;color:var(--ts);margin-bottom:3px;white-space:pre-line">原因：'+readableText(t.reason)+'</div>':'')+
+        (t.solution?'<div style="font-size:11px;color:#7AD4C0;white-space:pre-line">化解：'+readableText(t.solution)+'</div>':'')+
         '</div></div>');
     });
 
-    document.getElementById('w-comment').textContent=j.master_comment||'';
+    document.getElementById('w-comment').textContent=readableText(j.master_comment||'');
 
     wReportContext='财格：'+(j.caige||'')+'，财运评分：'+sc+'。正财：'+(j.zhengcai||'').substring(0,40)+'...偏财：'+(j.piancai||'').substring(0,40)+'...大师总评：'+(j.master_comment||'').substring(0,80);
     LAST_WEALTH_DATA = {data: j, score: sc, date: date, gender: gender};
