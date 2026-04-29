@@ -755,6 +755,20 @@ function tolerantQuickAskObject(text){
   parsed.actions = pickJsonishActions(t);
   return parsed.analysis || parsed.summary || parsed.actions.length ? parsed : null;
 }
+function summaryFromPlainText(text){
+  const lines = cleanJsonishText(text)
+    .split(/\n+/)
+    .map(s => s.replace(/^#+\s*/, '').trim())
+    .filter(Boolean);
+  const finalIdx = lines.findIndex(s => /最终结论|结论|建议/.test(s));
+  if(finalIdx >= 0){
+    const sameLine = lines[finalIdx].replace(/^.*?[：:]/, '').trim();
+    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
+    if(lines[finalIdx + 1]) return lines[finalIdx + 1].slice(0, 60);
+  }
+  const first = lines.find(s => !/^(一|二|三|四|五|六|七|八|九|十)[、.．]/.test(s) && !/^[-*]\s*$/.test(s));
+  return first ? first.slice(0, 60) : '';
+}
 function normalizeQuickAskResult(data, rawText){
   let d = data || safeExtractJSON(rawText) || tolerantQuickAskObject(rawText) || {};
   if(typeof d === 'string') d = safeExtractJSON(d) || tolerantQuickAskObject(d) || { analysis:d };
@@ -764,7 +778,7 @@ function normalizeQuickAskResult(data, rawText){
       if(nested && (nested.analysis || nested.summary)) d = {...d, ...nested};
     }
   });
-  if(!d.summary) d.summary = '已完成问事判断';
+  if(!d.summary) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
   if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
   if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
   if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
@@ -847,6 +861,24 @@ function buildQuickAskFallback(question, cls, hasBirth){
   };
 }
 
+function buildQuickAskRuntimeContext(question, cls){
+  return `【本次用户问题】
+${question}
+
+【系统识别的问题类型】
+${cls.label}（${cls.category}）
+
+【当前日期】
+${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+
+【本次输出要求】
+1. 必须直接回答“本次用户问题”，不要泛泛复述模板。
+2. 不要写旁白、开场白、角色自述、分析计划，例如“下面我将”“作为顾问”“我会从几个方面”。
+3. 如果后台 Prompt 规定了固定结构，请严格按该结构输出最终内容。
+4. 快捷问事固定使用通用问事逻辑，不在这里展开八字命理；如需命理深度分析，只在结果中自然引导去命理报告/财运分析等专属模块。
+5. 不要输出与用户问题无关的说明。`;
+}
+
 // ═══ 通用聊天接口（解梦、黄历、风水、追问） ═══
 app.post('/api/chat', requireToken, async(req,res)=>{
   try{
@@ -894,6 +926,7 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
       bazi_context: ''
     };
     const prompt = renderTemplate(promptTpl?.content, vars);
+    const runtimeContext = buildQuickAskRuntimeContext(question, cls);
     let model = modelConfigFor('quick_ask', req.body.allow_model_override ? req.body.selected_model : null);
     if(!hasModelKey(model) && hasModelKey({provider:'groq',model:'llama-3.3-70b-versatile'})) model = {provider:'groq',model:'llama-3.3-70b-versatile'};
     if(!hasModelKey(model)){
@@ -906,7 +939,10 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
         warning:'模型 API Key 未配置，已返回本地基础版结果。'
       });
     }
-    const text = await callLLM([{ role:'user', content: prompt }], 2500, model);
+    const text = await callLLM([
+      { role:'system', content: prompt },
+      { role:'user', content: runtimeContext }
+    ], 2500, model);
     const data = normalizeQuickAskResult(null, text);
     res.json({ ok:true, needs_birth:false, category:cls.category, category_label:cls.label, data });
   }catch(e){
