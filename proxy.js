@@ -16,6 +16,7 @@ const app       = express();
 // ═══ Prompt 模板库（后台可动态维护） ═══
 const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
 const MODEL_SETTINGS_FILE = path.join(__dirname, 'data', 'model-settings.json');
+const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const MODEL_OPTIONS = [
   {provider:'openrouter', model:'anthropic/claude-sonnet-4.6', name:'Claude Sonnet 4.6', recommended:['quick_ask','fengshui','dream','almanac','bazi','wealth','followup']},
   {provider:'openrouter', model:'anthropic/claude-opus-4.6', name:'Claude Opus 4.6', recommended:['bazi','wealth','followup']},
@@ -55,9 +56,11 @@ const DEFAULT_PROMPTS = [
 用户问题：{{question}}
 
 如果问题涉及个人长期运势，但用户未提供出生信息，请先给出基础判断，并自然提示“补充出生信息后可结合个人命理进一步分析”。
+输出要像“决策建议卡片”，不要像聊天机器人继续追问；不要写“你可以继续告诉我/我可以为你”等无法在当前页面承接的互动话术。
+必须包含：1）明确结论；2）判断依据；3）今天/近期能直接执行的动作；4）适合跳转的下一步服务。
 
 严格返回JSON，不输出其他内容：
-{"category":"{{category}}","need_birth":false,"summary":"一句话结论，30字以内","analysis":"详细分析，120-180字","actions":["可执行建议1","可执行建议2","可执行建议3"],"upgrade_hint":"适合的进阶服务提示，如无需则为空","consult_hint":"何种情况下建议真人咨询，40字以内"}`
+{"category":"{{category}}","need_birth":false,"summary":"明确结论，30字以内","analysis":"先给结论依据，再说明风险边界，160-220字，不能空泛","actions":["今天/近期可执行动作1，具体到行为","可执行动作2，具体到检查项或时间","可执行动作3，具体到规避事项"],"upgrade_hint":"下一步可点击的专题服务，如命理报告/今日黄历/风水诊断/梦境解析/报告中心，50字以内","consult_hint":"仅在高成本决策场景建议真人咨询，40字以内"}`
   },
   {
     key: 'quick_ask_bazi',
@@ -78,8 +81,11 @@ const DEFAULT_PROMPTS = [
 【系统计算命理上下文】
 {{bazi_context}}
 
+输出要像“个人化决策建议卡片”，不要像聊天机器人继续追问；不要写“你可以继续告诉我/我可以为你”等当前页面无法承接的互动话术。
+必须包含：1）明确结论；2）命理依据；3）短期行动；4）风险边界；5）适合跳转的下一步服务。
+
 严格返回JSON，不输出其他内容：
-{"category":"{{category}}","need_birth":true,"summary":"一句话结论，30字以内","analysis":"结合命理上下文的详细分析，160-240字","actions":["可执行建议1","可执行建议2","可执行建议3"],"timing":"近期适合/不适合行动的时间提示，60字以内","upgrade_hint":"建议解锁的报告或订阅权益，50字以内","consult_hint":"何种情况下建议真人咨询，50字以内"}`
+{"category":"{{category}}","need_birth":true,"summary":"个人化结论，30字以内","analysis":"结合四柱、五行、喜忌、大运/流年的判断依据，180-260字，必须落到用户问题","actions":["短期行动1，具体可做","短期行动2，具体到取舍或节奏","风险规避3，具体到不要做什么"],"timing":"近期适合/不适合行动的时间提示，60字以内","upgrade_hint":"下一步可点击的专题服务，如生成命理报告/深度财运分析/报告中心，50字以内","consult_hint":"仅在高成本决策场景建议真人咨询，50字以内"}`
   },
   {
     key: 'fengshui_analysis',
@@ -249,7 +255,7 @@ if(!process.env.INTERNAL_TOKEN){
 app.use(cors({
   origin: true,
   methods: ['GET','POST'],
-  allowedHeaders: ['Content-Type','X-CMA-Token'],
+  allowedHeaders: ['Content-Type','X-CMA-Token','Authorization'],
 }));
 
 // ═══ 安全：HTTP 安全响应头（防点击劫持、XSS、嗅探等） ═══
@@ -265,6 +271,7 @@ app.use('/api/wealth', express.json({ limit: '10kb' }));
 app.use('/api/activate',     express.json({ limit: '1kb' }));
 app.use('/api/use-credit',   express.json({ limit: '1kb' }));
 app.use('/api/admin',        express.json({ limit: '10kb' }));
+app.use('/api/auth',         express.json({ limit: '20kb' }));
 app.use(express.json({ limit: '50mb' })); // 全局兜底
 
 // ═══ 安全：限流（防 DDoS 和 API 滥用） ═══
@@ -286,6 +293,8 @@ app.use('/api/wealth', makeLimiter(10,  1, '请求过于频繁，请稍后再试
 app.use('/api/activate', makeLimiter(8, 15, '尝试次数过多，请15分钟后再试'));
 // 管理后台：每 IP 每分钟最多 20 次
 app.use('/api/admin', makeLimiter(20, 1, '请求过于频繁'));
+// 账号接口：防止注册/登录暴力尝试
+app.use('/api/auth', makeLimiter(20, 5, '请求过于频繁，请稍后再试'));
 
 // ═══ 安全：内部令牌验证中间件（AI 分析接口专用） ═══
 function requireToken(req, res, next){
@@ -295,6 +304,156 @@ function requireToken(req, res, next){
   }
   next();
 }
+
+// ═══ 用户账号与画像基础资料（手机号+密码，暂不接入短信） ═══
+const SESSION_SECRET = process.env.SESSION_SECRET || INTERNAL_TOKEN;
+
+function loadUsers(){
+  ensureDataDir();
+  try{
+    if(fs.existsSync(USERS_FILE)){
+      const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      return Array.isArray(users) ? users : [];
+    }
+  }catch(e){}
+  return [];
+}
+
+function saveUsers(users){
+  ensureDataDir();
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), {encoding:'utf8', mode:0o600});
+  try{ fs.chmodSync(USERS_FILE, 0o600); }catch(e){}
+}
+
+function normalizePhone(phone){
+  return String(phone || '').replace(/\D/g, '');
+}
+
+function hashPassword(password, salt){
+  return crypto.scryptSync(String(password), salt, 64).toString('hex');
+}
+
+function createPasswordRecord(password){
+  const salt = crypto.randomBytes(16).toString('hex');
+  return { salt, hash: hashPassword(password, salt) };
+}
+
+function verifyPassword(password, user){
+  if(!user || !user.password || !user.password.salt || !user.password.hash) return false;
+  const actual = Buffer.from(hashPassword(password, user.password.salt), 'hex');
+  const expected = Buffer.from(user.password.hash, 'hex');
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+function signToken(payload){
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  return `${body}.${sig}`;
+}
+
+function readToken(token){
+  const parts = String(token || '').split('.');
+  if(parts.length !== 2) return null;
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(parts[0]).digest('base64url');
+  const got = Buffer.from(parts[1]);
+  const exp = Buffer.from(expected);
+  if(got.length !== exp.length || !crypto.timingSafeEqual(got, exp)) return null;
+  try{
+    const payload = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    if(payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  }catch(e){ return null; }
+}
+
+function makeUserToken(user){
+  return signToken({ uid:user.id, phone:user.phone, exp:Date.now() + 30*24*60*60*1000 });
+}
+
+function sanitizeProfile(profile){
+  profile = profile && typeof profile === 'object' ? profile : {};
+  const date = String(profile.date || '').trim();
+  const hourRaw = profile.hour === '' || profile.hour === null || profile.hour === undefined ? null : parseInt(profile.hour, 10);
+  const genderRaw = String(profile.gender || '').trim();
+  const gender = genderRaw.indexOf('女') >= 0 ? '女' : '男';
+  return {
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '',
+    hour: Number.isFinite(hourRaw) && hourRaw >= 0 && hourRaw <= 23 ? hourRaw : null,
+    timeLabel: String(profile.timeLabel || '').trim().slice(0, 30),
+    gender,
+    birthplace: String(profile.birthplace || '').trim().slice(0, 80),
+    privacy_notice_accepted: !!profile.privacy_notice_accepted
+  };
+}
+
+function publicUser(user){
+  return {
+    id: user.id,
+    phone: user.phone,
+    profile: user.profile || {},
+    created_at: user.created_at,
+    updated_at: user.updated_at
+  };
+}
+
+function requireUser(req, res, next){
+  const auth = String(req.headers.authorization || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const payload = readToken(token);
+  if(!payload || !payload.uid) return res.status(401).json({ok:false,message:'请先登录'});
+  const users = loadUsers();
+  const user = users.find(u => u.id === payload.uid);
+  if(!user) return res.status(401).json({ok:false,message:'登录已失效，请重新登录'});
+  req.users = users;
+  req.user = user;
+  next();
+}
+
+app.post('/api/auth/register',(req,res)=>{
+  const phone = normalizePhone(req.body.phone);
+  const password = String(req.body.password || '');
+  if(!/^\d{6,20}$/.test(phone)) return res.json({ok:false,message:'请输入有效手机号'});
+  if(password.length < 6) return res.json({ok:false,message:'密码至少 6 位'});
+  const users = loadUsers();
+  if(users.some(u => u.phone === phone)) return res.json({ok:false,message:'该手机号已注册，请直接登录'});
+  const now = new Date().toISOString();
+  const user = {
+    id: crypto.randomUUID(),
+    phone,
+    password: createPasswordRecord(password),
+    profile: sanitizeProfile(req.body.profile),
+    created_at: now,
+    updated_at: now
+  };
+  users.push(user);
+  saveUsers(users);
+  res.json({ok:true,token:makeUserToken(user),user:publicUser(user)});
+});
+
+app.post('/api/auth/login',(req,res)=>{
+  const phone = normalizePhone(req.body.phone);
+  const password = String(req.body.password || '');
+  const users = loadUsers();
+  const user = users.find(u => u.phone === phone);
+  if(!user || !verifyPassword(password, user)) return res.json({ok:false,message:'手机号或密码不正确'});
+  user.last_login_at = new Date().toISOString();
+  saveUsers(users);
+  res.json({ok:true,token:makeUserToken(user),user:publicUser(user)});
+});
+
+app.get('/api/auth/me', requireUser, (req,res)=>{
+  res.json({ok:true,user:publicUser(req.user)});
+});
+
+app.post('/api/auth/profile', requireUser, (req,res)=>{
+  req.user.profile = sanitizeProfile(req.body.profile);
+  req.user.updated_at = new Date().toISOString();
+  saveUsers(req.users);
+  res.json({ok:true,user:publicUser(req.user)});
+});
+
+app.post('/api/auth/logout',(req,res)=>{
+  res.json({ok:true});
+});
 
 // ═══ 安全：静态文件（禁止目录浏览，隐藏敏感文件） ═══
 // 明确屏蔽敏感路径（优先于 static）
@@ -595,6 +754,17 @@ function hasModelKey(config){
 }
 
 function buildQuickAskFallback(question, cls, hasBirth){
+  const reason = {
+    timing: '这类问题主要看事项性质、当天宜忌、合同风险和执行时段。',
+    dream: '梦境类问题更适合从醒后情绪、重复意象和现实压力源来判断。',
+    fengshui: '空间类问题需要先看门窗、动线、床桌沙发位置、采光和朝向。',
+    wealth: '财运问题不能只看“旺不旺”，要拆成收入结构、破财点和近期节奏。',
+    career: '事业问题要同时看现实筹码、合作关系、现金流和行动窗口。',
+    relationship: '感情问题应先区分关系阶段，再看沟通稳定性和实际行动。',
+    fortune: '运势问题要拆成事业、财务、感情、健康和环境，不宜泛泛归因。',
+    compatibility: '合盘匹配需要双方出生信息，否则只能做关系风险与沟通建议。',
+    general: '综合问题需要先明确时间、对象、事项、风险和你想得到的结果。'
+  };
   const commonActions = {
     timing: ['先确认事项是否必须今天完成，非刚需可优先选择上午沟通。', '签约、付款、开业类事项建议避开情绪波动时段，先复核关键条款。', '如金额较大，可补充出生信息后做个人择时增强分析。'],
     dream: ['记录梦中最强烈的意象和醒来情绪，先判断它对应压力、关系还是财务主题。', '今天避免因梦境直接做重大决定，先观察现实中是否有相同信号。', '如果同类梦反复出现，可继续做梦境深度解析。'],
@@ -610,8 +780,8 @@ function buildQuickAskFallback(question, cls, hasBirth){
   return {
     category: cls.category,
     need_birth: cls.birth === 'required' && !hasBirth,
-    summary: hasBirth ? '已进入个人化问事判断。' : '已给出基础判断，可补资料增强。',
-    analysis: `当前问题属于“${cls.label}”。本地基础判断会先从事项性质、时间压力、现实风险和可执行动作入手；如果要结合八字、流年、大运等个人命理维度，需要补充出生日期、时辰和性别。你的问题是：“${question}”。`,
+    summary: hasBirth ? '先稳住节奏，再看行动窗口。' : '先做基础判断，重大事再增强。',
+    analysis: `你的问题属于“${cls.label}”。${reason[cls.category] || reason.general}当前可先按现实决策处理：确认这件事是否紧急、成本是否高、是否可逆、是否需要他人配合。${hasBirth ? '已补充出生信息时，后续可进一步结合命盘、流年与喜忌做个人化判断。' : '如果要判断长期运势、财运、事业或感情走势，需要补充出生日期、时辰和性别。'}本次问题：“${question}”。`,
     actions,
     timing: cls.category === 'timing' ? '普通择事可先看今日宜忌；重大事项建议进一步做个人择日。' : '',
     upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '补充出生信息后，可解锁命理增强分析或专题报告。',

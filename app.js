@@ -6,6 +6,8 @@ var SELECTED_MODEL = 'anthropic/claude-sonnet-4.6'; // 固定使用 Claude Sonne
 var TRIAL_USED   = localStorage.getItem('cma_trial_used') === '1';
 var PRO_CREDITS  = localStorage.getItem('cma_credits') === '-1' ? -1 : parseInt(localStorage.getItem('cma_credits') || '0');
 var ACTIVE_CODE  = localStorage.getItem('cma_active_code') || null;
+var AUTH_TOKEN   = localStorage.getItem('cma_auth_token') || '';
+var CURRENT_USER = null;
 
 function saveProState() {
   localStorage.setItem('cma_trial_used', TRIAL_USED ? '1' : '0');
@@ -20,6 +22,175 @@ function updateCreditsUI() {
   else if (PRO_CREDITS > 0)  { badge.textContent = PRO_CREDITS + ' 次剩余'; badge.style.background = 'rgba(201,168,76,0.18)'; badge.style.color = '#C9A84C'; }
   else if (!TRIAL_USED)      { badge.textContent = '1 次免费试用'; badge.style.background = 'rgba(76,175,118,0.18)'; badge.style.color = '#4CAF76'; }
   else                       { badge.textContent = '⬆ 升级解锁'; badge.style.background = 'rgba(139,26,26,0.5)'; badge.style.color = '#FFB0B0'; }
+}
+
+function accountMsg(text, ok){
+  var msg = document.getElementById('account-msg');
+  if(!msg) return;
+  msg.textContent = text || '';
+  msg.style.color = ok ? '#4CAF76' : '#E08080';
+}
+
+function authHeaders(){
+  return {'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN};
+}
+
+function updateAccountUI(){
+  var badge = document.getElementById('account-badge');
+  if(!badge) return;
+  if(CURRENT_USER){
+    badge.textContent = '账号 ' + CURRENT_USER.phone.slice(-4);
+    badge.style.background = 'rgba(76,175,118,.14)';
+    badge.style.color = '#2E7D4F';
+  } else {
+    badge.textContent = '登录';
+    badge.style.background = 'rgba(30,45,94,.08)';
+    badge.style.color = 'var(--navy)';
+  }
+}
+
+function switchAccountView(mode){
+  ['login','register'].forEach(function(k){
+    var tab=document.getElementById('account-'+k+'-tab');
+    var view=document.getElementById('account-'+k+'-view');
+    if(tab) tab.classList.toggle('on', k===mode);
+    if(view) view.classList.toggle('on', k===mode);
+  });
+  accountMsg('', true);
+}
+
+function showAccountModal(mode){
+  var overlay = document.getElementById('account-overlay');
+  if(!overlay) return;
+  overlay.style.display = 'flex';
+  accountMsg('', true);
+  if(!CURRENT_USER) switchAccountView(mode || 'login');
+  renderAccountState();
+}
+
+function hideAccountModal(){
+  var overlay = document.getElementById('account-overlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
+function renderAccountState(){
+  var auth = document.getElementById('account-auth-area');
+  var profile = document.getElementById('account-profile-area');
+  if(!auth || !profile) return;
+  auth.style.display = CURRENT_USER ? 'none' : 'block';
+  profile.style.display = CURRENT_USER ? 'block' : 'none';
+  if(CURRENT_USER) fillAccountProfile(CURRENT_USER.profile || {});
+}
+
+function collectAccountProfile(){
+  var hourEl = document.getElementById('profile-bhour');
+  return {
+    date: (document.getElementById('profile-bday') || {}).value || '',
+    hour: hourEl && hourEl.value !== '' ? parseInt(hourEl.value, 10) : null,
+    timeLabel: hourEl ? hourEl.options[hourEl.selectedIndex].text : '',
+    gender: (document.getElementById('profile-gender') || {}).value || '男',
+    birthplace: ((document.getElementById('profile-birthplace') || {}).value || '').trim(),
+    privacy_notice_accepted: true
+  };
+}
+
+function fillAccountProfile(profile){
+  profile = profile || {};
+  if(document.getElementById('profile-bday')) document.getElementById('profile-bday').value = profile.date || '';
+  if(document.getElementById('profile-bhour')) document.getElementById('profile-bhour').value = profile.hour === null || profile.hour === undefined ? '' : String(profile.hour);
+  if(document.getElementById('profile-gender')) document.getElementById('profile-gender').value = profile.gender || '男';
+  if(document.getElementById('profile-birthplace')) document.getElementById('profile-birthplace').value = profile.birthplace || '';
+}
+
+function setTimeSelectByHour(id, hour){
+  var el=document.getElementById(id);
+  if(!el || hour===null || hour===undefined) return;
+  var map={0:'子时',2:'丑时',4:'寅时',6:'卯时',8:'辰时',10:'巳时',12:'午时',14:'未时',16:'申时',18:'酉时',20:'戌时',22:'亥时'};
+  var target=map[hour];
+  if(!target) return;
+  for(var i=0;i<el.options.length;i++){
+    if(el.options[i].value===String(hour) || el.options[i].text.indexOf(target)>=0){ el.selectedIndex=i; return; }
+  }
+}
+
+function applyProfileToForms(profile){
+  if(!profile) return;
+  try{ localStorage.setItem('cma_birth_profile', JSON.stringify(profile)); }catch(e){}
+  [['ask-bday','date'],['bday','date'],['w-bday','date']].forEach(function(pair){
+    var el=document.getElementById(pair[0]); if(el && profile[pair[1]]) el.value=profile[pair[1]];
+  });
+  setTimeSelectByHour('ask-bhour', profile.hour);
+  setTimeSelectByHour('btime', profile.hour);
+  setTimeSelectByHour('w-btime', profile.hour);
+  if(document.getElementById('ask-gender')) document.getElementById('ask-gender').value = profile.gender || '男';
+  if(document.getElementById('ask-birthplace')) document.getElementById('ask-birthplace').value = profile.birthplace || '';
+}
+
+function saveAuthResult(d){
+  if(!d.ok) throw new Error(d.message || '操作失败');
+  AUTH_TOKEN = d.token || AUTH_TOKEN;
+  if(AUTH_TOKEN) localStorage.setItem('cma_auth_token', AUTH_TOKEN);
+  CURRENT_USER = d.user || null;
+  if(CURRENT_USER && CURRENT_USER.profile) applyProfileToForms(CURRENT_USER.profile);
+  updateAccountUI();
+  renderAccountState();
+}
+
+function authLogin(){
+  accountMsg('登录中...', true);
+  fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    phone: document.getElementById('login-phone').value,
+    password: document.getElementById('login-password').value
+  })}).then(function(r){return r.json();}).then(function(d){
+    saveAuthResult(d);
+    accountMsg('登录成功，已同步个人资料。', true);
+  }).catch(function(e){ accountMsg(e.message || '登录失败'); });
+}
+
+function authRegister(){
+  accountMsg('注册中...', true);
+  fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    phone: document.getElementById('register-phone').value,
+    password: document.getElementById('register-password').value,
+    profile: {privacy_notice_accepted:true}
+  })}).then(function(r){return r.json();}).then(function(d){
+    saveAuthResult(d);
+    accountMsg('注册成功，请完善出生资料。', true);
+  }).catch(function(e){ accountMsg(e.message || '注册失败'); });
+}
+
+function authMe(){
+  if(!AUTH_TOKEN){ updateAccountUI(); return; }
+  fetch('/api/auth/me',{headers:authHeaders()}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) throw new Error(d.message || '登录已失效');
+    CURRENT_USER = d.user;
+    if(CURRENT_USER.profile) applyProfileToForms(CURRENT_USER.profile);
+    updateAccountUI();
+  }).catch(function(){
+    AUTH_TOKEN=''; CURRENT_USER=null; localStorage.removeItem('cma_auth_token'); updateAccountUI();
+  });
+}
+
+function saveAccountProfile(){
+  if(!AUTH_TOKEN){ accountMsg('请先登录'); return; }
+  var profile = collectAccountProfile();
+  accountMsg('保存中...', true);
+  fetch('/api/auth/profile',{method:'POST',headers:authHeaders(),body:JSON.stringify({profile:profile})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(!d.ok) throw new Error(d.message || '保存失败');
+      CURRENT_USER = d.user;
+      applyProfileToForms(CURRENT_USER.profile);
+      updateAccountUI();
+      accountMsg('已保存，后续问事会自动带入资料。', true);
+    }).catch(function(e){ accountMsg(e.message || '保存失败'); });
+}
+
+function logoutAccount(){
+  AUTH_TOKEN=''; CURRENT_USER=null;
+  localStorage.removeItem('cma_auth_token');
+  updateAccountUI();
+  renderAccountState();
+  accountMsg('已退出登录。', true);
 }
 
 var LAST_DEDUCTION = null; // 'credit' | 'trial' | null，用于失败时退还
@@ -514,6 +685,10 @@ function classifyQuickQuestion(q){
 }
 
 function fillQuickBirthFromStorage(){
+  if(CURRENT_USER && CURRENT_USER.profile){
+    applyProfileToForms(CURRENT_USER.profile);
+    return;
+  }
   try{
     var p=JSON.parse(localStorage.getItem('cma_birth_profile')||'null');
     if(!p)return;
@@ -1991,5 +2166,7 @@ document.getElementById('w-export-btn').addEventListener('click',function(){
 var now=new Date();
 document.getElementById('dday').textContent=now.getDate();
 document.getElementById('dmon').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月';
+updateAccountUI();
+authMe();
 initAlmanac();
 renderHistory();
