@@ -359,8 +359,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ask-result.show{display:block}
 .ask-summary{font-size:15px;color:var(--navy);font-weight:700;margin-bottom:8px}
 .ask-tag{display:inline-block;padding:3px 9px;border-radius:12px;background:rgba(201,168,76,.12);color:var(--gold);font-size:10px;margin-bottom:10px}
+.ask-analysis-text{white-space:pre-line;line-height:1.9}
 .ask-actions{display:grid;gap:8px;margin-top:12px}
-.ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.6}
+.ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.7;white-space:pre-line}
 @media(max-width:560px){.birth-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.account-grid{grid-template-columns:1fr}.account-actions{flex-direction:column}}
 
@@ -527,7 +528,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="card">
       <div class="ask-tag" id="ask-category"></div>
       <div class="ask-summary" id="ask-summary"></div>
-      <div class="aitxt" id="ask-analysis"></div>
+      <div class="aitxt ask-analysis-text" id="ask-analysis"></div>
       <div class="ask-actions" id="ask-actions"></div>
       <div class="report-grid" style="margin-top:12px">
         <div class="report-block"><div class="report-k">进阶建议</div><div class="report-v" id="ask-upgrade"></div></div>

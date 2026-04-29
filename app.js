@@ -787,6 +787,15 @@ function cleanQuickAskAnalysis(s){
   return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 
+function formatQuickAskBreaks(s){
+  return cleanDisplayMarkdown(s)
+    .replace(/[ \t]+/g,' ')
+    .replace(/\s*(?=([一二三四五六七八九十]+|[0-9]+)[、.．]\s*)/g,'\n\n')
+    .replace(/\s*•\s*/g,'\n• ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
 function pickJsonishField(text,key){
   var t=cleanJsonishText(text);
   var re=new RegExp('"'+key+'"\\s*:\\s*"([\\s\\S]*?)"\\s*,\\s*"(category|need_birth|summary|analysis|actions|timing|upgrade_hint|consult_hint)"\\s*:','i');
@@ -835,12 +844,12 @@ function normalizeQuickAskData(d){
     if(nested2)d=Object.assign({},d,nested2);
   }
   if(!Array.isArray(d.actions))d.actions=d.actions?[String(d.actions)]:[];
-  d.summary=cleanDisplayMarkdown(d.summary||'');
-  d.analysis=cleanQuickAskAnalysis(d.analysis||'');
-  d.upgrade_hint=cleanDisplayMarkdown(d.upgrade_hint||'');
-  d.consult_hint=cleanDisplayMarkdown(d.consult_hint||'');
-  d.timing=cleanDisplayMarkdown(d.timing||'');
-  d.actions=d.actions.map(function(a){return cleanDisplayMarkdown(a);}).filter(Boolean);
+  d.summary=formatQuickAskBreaks(d.summary||'');
+  d.analysis=formatQuickAskBreaks(cleanQuickAskAnalysis(d.analysis||''));
+  d.upgrade_hint=formatQuickAskBreaks(d.upgrade_hint||'');
+  d.consult_hint=formatQuickAskBreaks(d.consult_hint||'');
+  d.timing=formatQuickAskBreaks(d.timing||'');
+  d.actions=d.actions.map(function(a){return formatQuickAskBreaks(a);}).filter(Boolean);
   return d;
 }
 
