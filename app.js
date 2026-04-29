@@ -695,7 +695,7 @@ function reportUsage(){
 }
 
 // ═══════════════════════════════════════════
-// 快捷问事：按问题类型判断是否需要八字
+// 快捷问事：只做分类展示和下一步推荐，不切换 Prompt
 // ═══════════════════════════════════════════
 function classifyQuickQuestion(q){
   q=String(q||'').toLowerCase();
@@ -847,12 +847,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
   var cls=classifyQuickQuestion(q);
   var birth=getQuickBirth();
   var panel=document.getElementById('ask-birth-panel');
-  if(cls.birth==='required'&&!birth){
-    panel.classList.add('show');
-    err('ask-err','这个问题需要结合个人命理判断，请先补充出生日期。');
-    return;
-  }
-  if(cls.birth==='optional'&&!birth) panel.classList.remove('show');
+  if(panel) panel.classList.remove('show');
   if(!checkProAccess())return;
 
   noerr('ask-err');
@@ -863,12 +858,6 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     body:JSON.stringify({question:q,birth:birth})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
-    if(j.needs_birth){
-      refundProAccess();
-      panel.classList.add('show');
-      err('ask-err',j.message||'请补充出生信息后再问');
-      return;
-    }
     var d=normalizeQuickAskData(j.data||{});
     document.getElementById('ask-category').textContent=j.category_label||cls.label;
     document.getElementById('ask-summary').textContent=normalizeAskText(d.summary)||'已完成基础判断';
