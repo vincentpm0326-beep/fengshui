@@ -757,11 +757,34 @@ function normalizeAskText(v){
   }catch(e){}
   var obj=parseLooseQuickAskJson(s);
   if(obj) return obj.analysis||obj.summary||'';
-  return s.replace(/```json|```/g,'').trim();
+  return cleanDisplayMarkdown(s);
 }
 
 function cleanJsonishText(s){
   return String(s||'').replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+}
+
+function cleanDisplayMarkdown(s){
+  return cleanJsonishText(s)
+    .replace(/\r/g,'')
+    .replace(/^[ \t]*---+[ \t]*$/gm,'')
+    .replace(/^#{1,6}\s*/gm,'')
+    .replace(/\*\*([^*]+)\*\*/g,'$1')
+    .replace(/__([^_]+)__/g,'$1')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/^[ \t]*>[ \t]*/gm,'')
+    .replace(/^[ \t]*[-*]\s+/gm,'• ')
+    .replace(/^[ \t]*[✅⚠️]\s*/gm,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function cleanQuickAskAnalysis(s){
+  var lines=cleanDisplayMarkdown(s).split('\n');
+  while(lines.length && /^(?:[二三四五六七八九十]+|[2-9])[、.．]\s*(?:问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示|最终结论|结论|建议)?\s*$/.test(lines[0].trim())){
+    lines.shift();
+  }
+  return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 
 function pickJsonishField(text,key){
@@ -807,11 +830,17 @@ function normalizeQuickAskData(d){
     }
   });
   if(typeof d.analysis==='string'){
-    d.analysis=cleanJsonishText(d.analysis);
+    d.analysis=cleanQuickAskAnalysis(d.analysis);
     var nested2=parseLooseQuickAskJson(d.analysis);
     if(nested2)d=Object.assign({},d,nested2);
   }
   if(!Array.isArray(d.actions))d.actions=d.actions?[String(d.actions)]:[];
+  d.summary=cleanDisplayMarkdown(d.summary||'');
+  d.analysis=cleanQuickAskAnalysis(d.analysis||'');
+  d.upgrade_hint=cleanDisplayMarkdown(d.upgrade_hint||'');
+  d.consult_hint=cleanDisplayMarkdown(d.consult_hint||'');
+  d.timing=cleanDisplayMarkdown(d.timing||'');
+  d.actions=d.actions.map(function(a){return cleanDisplayMarkdown(a);}).filter(Boolean);
   return d;
 }
 

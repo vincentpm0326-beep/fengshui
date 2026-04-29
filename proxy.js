@@ -755,18 +755,48 @@ function tolerantQuickAskObject(text){
   parsed.actions = pickJsonishActions(t);
   return parsed.analysis || parsed.summary || parsed.actions.length ? parsed : null;
 }
-function summaryFromPlainText(text){
-  const lines = cleanJsonishText(text)
-    .split(/\n+/)
-    .map(s => s.replace(/^#+\s*/, '').trim())
-    .filter(Boolean);
-  const finalIdx = lines.findIndex(s => /最终结论|结论|建议/.test(s));
-  if(finalIdx >= 0){
-    const sameLine = lines[finalIdx].replace(/^.*?[：:]/, '').trim();
-    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
-    if(lines[finalIdx + 1]) return lines[finalIdx + 1].slice(0, 60);
+function cleanDisplayMarkdown(text){
+  return cleanJsonishText(text)
+    .replace(/\r/g, '')
+    .replace(/^[ \t]*---+[ \t]*$/gm, '')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^[ \t]*>[ \t]*/gm, '')
+    .replace(/^[ \t]*[-*]\s+/gm, '• ')
+    .replace(/^[ \t]*[✅⚠️]\s*/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+function cleanQuickAskAnalysis(text){
+  const lines = cleanDisplayMarkdown(text).split('\n');
+  while(lines.length && /^(?:[二三四五六七八九十]+|[2-9])[、.．]\s*(?:问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示|最终结论|结论|建议)?\s*$/.test(lines[0].trim())){
+    lines.shift();
   }
-  const first = lines.find(s => !/^(一|二|三|四|五|六|七|八|九|十)[、.．]/.test(s) && !/^[-*]\s*$/.test(s));
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function stripSectionTitle(text){
+  return cleanDisplayMarkdown(text)
+    .replace(/^(?:[一二三四五六七八九十]+|[0-9]+)[、.．]\s*/, '')
+    .replace(/^(?:问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示|最终结论|结论|建议)[：:]?\s*/, '')
+    .trim();
+}
+function summaryFromPlainText(text){
+  const lines = cleanDisplayMarkdown(text)
+    .split(/\n+/)
+    .map(s => stripSectionTitle(s))
+    .filter(Boolean);
+  const rawLines = cleanDisplayMarkdown(text).split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const finalIdx = rawLines.findIndex(s => /^(?:[六七八九十]+[、.．]\s*)?最终结论[：:]?$/.test(stripSectionTitle(s)) || /最终结论/.test(s));
+  if(finalIdx >= 0){
+    const sameLine = stripSectionTitle(rawLines[finalIdx].replace(/^.*?[：:]/, '').trim());
+    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
+    if(rawLines[finalIdx + 1]) return stripSectionTitle(rawLines[finalIdx + 1]).slice(0, 60);
+  }
+  const conclusionIdx = rawLines.findIndex(s => /^(?:[一二三四五六七八九十]+[、.．]\s*)?结论[：:]?$/.test(stripSectionTitle(s)));
+  if(conclusionIdx >= 0 && rawLines[conclusionIdx + 1]) return stripSectionTitle(rawLines[conclusionIdx + 1]).slice(0, 60);
+  const first = lines.find(s => !/^(问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示)$/.test(s));
   return first ? first.slice(0, 60) : '';
 }
 function normalizeQuickAskResult(data, rawText){
@@ -778,11 +808,16 @@ function normalizeQuickAskResult(data, rawText){
       if(nested && (nested.analysis || nested.summary)) d = {...d, ...nested};
     }
   });
-  if(!d.summary) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
+  if(!d.summary || /现实执行建议|问题性质判断|当前时机判断|风险提示/.test(d.summary)) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
   if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
   if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
   if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
-  d.analysis = cleanJsonishText(d.analysis);
+  d.summary = cleanDisplayMarkdown(d.summary);
+  d.analysis = cleanQuickAskAnalysis(d.analysis);
+  d.upgrade_hint = cleanDisplayMarkdown(d.upgrade_hint || '');
+  d.consult_hint = cleanDisplayMarkdown(d.consult_hint || '');
+  d.timing = cleanDisplayMarkdown(d.timing || '');
+  d.actions = d.actions.map(a => cleanDisplayMarkdown(a)).filter(Boolean);
   if(/^\s*\{/.test(d.analysis) && d.analysis.indexOf('"analysis"') >= 0){
     const nested = tolerantQuickAskObject(d.analysis);
     if(nested) d = {...d, ...nested};
