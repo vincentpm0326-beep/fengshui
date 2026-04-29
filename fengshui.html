@@ -363,6 +363,33 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.6}
 @media(max-width:560px){.birth-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.account-grid{grid-template-columns:1fr}.account-actions{flex-direction:column}}
+
+/* 命理子标签页 */
+.mingli-subtabs{display:flex;gap:6px;margin-bottom:18px}
+.mingli-stab{flex:1;padding:10px;background:none;border:1px solid var(--b);border-radius:8px;font-size:12px;font-weight:600;color:var(--ts);cursor:pointer;font-family:inherit;transition:all .18s}
+.mingli-stab:hover:not(.on){border-color:rgba(30,45,94,.2);color:var(--navy);background:rgba(30,45,94,.03)}
+.mingli-stab.on{background:rgba(30,45,94,.07);border-color:rgba(30,45,94,.28);color:var(--navy)}
+.mingli-stab-icon{margin-right:5px}
+
+/* 跨模块推荐卡片 */
+.next-step-card{background:linear-gradient(135deg,rgba(30,45,94,0.03),rgba(139,100,16,0.03));border:1px solid var(--b);border-radius:12px;padding:14px 16px;margin-top:14px}
+.nsc-title{font-size:10px;color:var(--navy);font-weight:700;letter-spacing:.14em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.nsc-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--b),transparent)}
+.nsc-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.nsc-item{background:var(--ink2);border:1px solid var(--b);border-radius:9px;padding:12px;cursor:pointer;transition:all .18s;display:flex;gap:10px;align-items:flex-start}
+.nsc-item:hover{border-color:rgba(30,45,94,.25);transform:translateY(-1px);box-shadow:0 3px 12px rgba(30,45,94,.09)}
+.nsc-item-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.nsc-item-body{flex:1}
+.nsc-item-title{font-size:12px;color:var(--navy);font-weight:600;margin-bottom:3px}
+.nsc-item-desc{font-size:10px;color:var(--td);line-height:1.5}
+
+/* 首页快捷问事框 */
+.home-ask-box{display:flex;gap:0;margin-bottom:16px;background:var(--ink2);border:1px solid var(--b);border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(139,100,16,0.07);transition:box-shadow .2s}
+.home-ask-box:focus-within{box-shadow:0 0 0 3px rgba(30,45,94,0.1);border-color:rgba(30,45,94,.25)}
+.home-ask-input{flex:1;border:none;background:none;color:var(--tp);font-family:inherit;font-size:13px;outline:none;padding:12px 14px}
+.home-ask-input::placeholder{color:var(--td)}
+.home-ask-btn{padding:10px 18px;background:var(--navy);border:none;color:#F0E8D0;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .18s;flex-shrink:0}
+.home-ask-btn:hover{background:var(--navy2)}
 </style>
 </head>
 <body>
@@ -385,11 +412,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="tabs" id="tabs">
     <button class="tab on" data-p="home">首页</button>
     <button class="tab" data-p="ask">问事</button>
-    <button class="tab" data-p="analyzer">空间分析</button>
+    <button class="tab" data-p="analyzer">风水</button>
     <button class="tab" data-p="dream">解梦</button>
     <button class="tab" data-p="almanac">黄历</button>
-    <button class="tab" data-p="profile">命盘</button>
-    <button class="tab" data-p="wealth">财运</button>
+    <button class="tab" data-p="profile">命理</button>
     <button class="tab" data-p="reports">报告</button>
   </div>
   <span id="credits-badge" onclick="showPaywall()" style="cursor:pointer"></span>
@@ -411,6 +437,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="dlbl">今日吉祥能量</div>
       <div id="home-pills"><span style="font-size:11px;color:var(--td)">前往黄历页面查看今日运势 →</span></div>
     </div>
+  </div>
+  <!-- 快捷问事入口 -->
+  <div class="home-ask-box">
+    <input class="home-ask-input" id="home-ask-input" placeholder="说说你想问的事… 今天适合签合同吗？最近总不顺是什么原因？" onkeydown="if(event.key==='Enter')goHomeAsk()">
+    <button class="home-ask-btn" onclick="goHomeAsk()">✦ 问一问</button>
   </div>
   <div class="mods" id="mods">
     <div class="mod feat" data-goto="ask"><div class="mbadge">NEW</div><div class="mod-icon">✦</div><div class="mod-name">快捷问事</div><div class="mod-desc">先问问题，再判断是否需八字</div></div>
@@ -682,6 +713,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="btn-out" id="restart-btn" style="flex:1">← 重新分析</button>
       <button class="btn-out" id="az-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出报告</button>
     </div>
+    <div class="next-step-card" id="az-next-step" style="display:none">
+      <div class="nsc-title">深入探索</div>
+      <div class="nsc-items">
+        <div class="nsc-item" onclick="goTo('profile')">
+          <div class="nsc-item-icon">☰</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">命盘验证</div><div class="nsc-item-desc">通过八字确认喜用神与最佳方位</div></div>
+        </div>
+        <div class="nsc-item" onclick="goTo('ask')">
+          <div class="nsc-item-icon">✦</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">追问顾问</div><div class="nsc-item-desc">针对报告中的发现继续深入咨询</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -818,6 +862,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <!-- ═══ 八字命盘 ═══ -->
 <div class="page" id="page-profile">
+  <div class="mingli-subtabs">
+    <button class="mingli-stab on" onclick="goTo('profile')"><span class="mingli-stab-icon">☰</span>八字命盘</button>
+    <button class="mingli-stab" onclick="goTo('wealth')"><span class="mingli-stab-icon">💰</span>财运分析</button>
+  </div>
   <div class="h1">命理报告</div>
   <div class="h2">基于《子平真诠》算法引擎，输出能量模型、格局诊断、风险预警与物理补救</div>
   <div class="card">
@@ -917,11 +965,32 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="btn-out" id="prof-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出命理报告</button>
     </div>
+    <div class="next-step-card" id="prof-next-step" style="display:none">
+      <div class="nsc-title">深入探索</div>
+      <div class="nsc-items">
+        <div class="nsc-item" onclick="syncBirthToWealth();goTo('wealth')">
+          <div class="nsc-item-icon">💰</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">财运分析</div><div class="nsc-item-desc">基于此命盘的财格与旺财方位</div></div>
+        </div>
+        <div class="nsc-item" onclick="goTo('analyzer')">
+          <div class="nsc-item-icon">🏠</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">风水布局</div><div class="nsc-item-desc">将喜用神方位落实到居家环境</div></div>
+        </div>
+        <div class="nsc-item" onclick="goTo('ask')">
+          <div class="nsc-item-icon">✦</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">追问顾问</div><div class="nsc-item-desc">针对格局与运势的具体问题</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ═══ 财运分析 ═══ -->
 <div class="page" id="page-wealth">
+  <div class="mingli-subtabs">
+    <button class="mingli-stab" onclick="goTo('profile')"><span class="mingli-stab-icon">☰</span>八字命盘</button>
+    <button class="mingli-stab on" onclick="goTo('wealth')"><span class="mingli-stab-icon">💰</span>财运分析</button>
+  </div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
     <div class="h1" style="margin-bottom:0">财运分析</div>
     <span style="padding:3px 10px;background:linear-gradient(135deg,rgba(139,26,26,0.6),rgba(107,0,0,0.6));border:0.5px solid rgba(201,168,76,0.4);border-radius:12px;font-size:10px;font-weight:600;color:#FFD580;letter-spacing:.08em">会员专属</span>
@@ -1051,6 +1120,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="display:flex;gap:10px">
       <button class="btn-out" id="w-restart-btn" style="flex:1">← 重新分析</button>
       <button class="btn-out" id="w-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出报告</button>
+    </div>
+    <div class="next-step-card" id="w-next-step" style="display:none">
+      <div class="nsc-title">深入探索</div>
+      <div class="nsc-items">
+        <div class="nsc-item" onclick="goTo('profile')">
+          <div class="nsc-item-icon">☰</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">完整命盘</div><div class="nsc-item-desc">查看格局、大运与人生主线判断</div></div>
+        </div>
+        <div class="nsc-item" onclick="goTo('analyzer')">
+          <div class="nsc-item-icon">🏠</div>
+          <div class="nsc-item-body"><div class="nsc-item-title">财位风水</div><div class="nsc-item-desc">将财神方位落实到居家空间布局</div></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

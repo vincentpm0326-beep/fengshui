@@ -649,15 +649,42 @@ document.getElementById('report-center-list').addEventListener('click',function(
 // ═══════════════════════════════════════════
 function goTo(p){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
-  document.querySelector('[data-p="'+p+'"]').classList.add('on');
+  // 财运页归属命理 tab（profile tab 高亮）
+  var activeTab=p==='wealth'?'profile':p;
+  var tabEl=document.querySelector('[data-p="'+activeTab+'"]');
+  if(tabEl) tabEl.classList.add('on');
   document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on');});
   document.getElementById('page-'+p).classList.add('on');
   if(p==='reports')renderReportCenter();
   window.scrollTo(0,0);
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(b)goTo(b.getAttribute('data-p'));});
-// model-select 已移除，SELECTED_MODEL 固定为 claude-sonnet-4.6
 document.getElementById('mods').addEventListener('click',function(e){var m=e.target.closest('[data-goto]');if(m)goTo(m.getAttribute('data-goto'));});
+
+// 首页快捷问事：填入问题后跳转问事页
+function goHomeAsk(){
+  var q=document.getElementById('home-ask-input').value.trim();
+  if(q) document.getElementById('ask-question').value=q;
+  goTo('ask');
+}
+
+// 命盘→财运：同步出生信息，减少重复填写
+function syncBirthToWealth(){
+  var bday=document.getElementById('bday').value;
+  var btime=document.getElementById('btime').value;
+  if(bday) document.getElementById('w-bday').value=bday;
+  if(btime) document.getElementById('w-btime').value=btime;
+  var g=document.querySelector('#genrow div[style*="gold"]');
+  if(g){
+    var gText=g.textContent.trim();
+    document.querySelectorAll('#w-genrow > div').forEach(function(b){
+      var isMatch=b.textContent.trim()===gText;
+      b.style.background=isMatch?'rgba(201,168,76,.08)':'var(--ink3)';
+      b.style.borderColor=isMatch?'var(--gold)':'var(--b)';
+      b.style.color=isMatch?'var(--gold)':'var(--ts)';
+    });
+  }
+}
 document.getElementById('logo-home').addEventListener('click',function(){goTo('home');});
 updateCreditsUI(); // 初始化显示剩余次数
 
@@ -1087,6 +1114,7 @@ function renderReport(d){
   LAST_ANALYZER_DATA = d;
   ANALYZER_FOLLOWUPS = [];
   saveHistory('风水分析', (d.room_detected||'空间')+'风水分析', sc, d);
+  document.getElementById('az-next-step').style.display='block';
 
   document.getElementById('followup-answer').classList.remove('show');
   document.getElementById('followup-input').value='';
@@ -1121,6 +1149,7 @@ document.getElementById('copy-btn').addEventListener('click',function(){
 });
 document.getElementById('restart-btn').addEventListener('click',function(){
   document.getElementById('rpt').style.display='none';
+  document.getElementById('az-next-step').style.display='none';
   document.getElementById('az-input-section').style.display='block';
   document.getElementById('generate-btn').disabled=false;
   // 重置图片
@@ -1527,6 +1556,7 @@ document.getElementById('profilebtn').addEventListener('click',function(){
       }));
     }catch(e){}
     reportUsage(); saveHistory('命理报告', date+' '+gender+'命理报告', '', br);
+    document.getElementById('prof-next-step').style.display='block';
     document.getElementById('profileres').scrollIntoView({behavior:'smooth',block:'nearest'});
   }).catch(function(e){refundProAccess();err('prof-err','八字计算连接失败，请确认代理已启动');document.getElementById('prof-loading').classList.remove('on');document.getElementById('profilebtn').disabled=false;});
 });
@@ -1655,6 +1685,7 @@ document.getElementById('w-btn').addEventListener('click',function(){
     LAST_WEALTH_DATA = {data: j, score: sc, date: date, gender: gender};
     WEALTH_FOLLOWUPS = [];
     reportUsage(); saveHistory('财运分析', date+' '+gender+'财运分析', sc, j);
+    document.getElementById('w-next-step').style.display='block';
     document.getElementById('w-result').scrollIntoView({behavior:'smooth',block:'start'});
   }).catch(function(e){refundProAccess();err('w-err',e.message||'财运分析连接失败，请确认代理已启动');document.getElementById('w-loading').classList.remove('on');document.getElementById('w-btn').disabled=false;});
 });
@@ -1702,6 +1733,7 @@ document.getElementById('w-followup-btn').addEventListener('click',function(){
 
 document.getElementById('w-restart-btn').addEventListener('click',function(){
   document.getElementById('w-result').style.display='none';
+  document.getElementById('w-next-step').style.display='none';
   document.getElementById('w-bday').value='';
   window.scrollTo(0,0);
 });
