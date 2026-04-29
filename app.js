@@ -302,7 +302,7 @@ var P = {
 // ═══════════════════════════════════════════
 // 工具函数
 // ═══════════════════════════════════════════
-function callAPI(content, tokens, ok, fail, images) {
+function callAPI(content, tokens, ok, fail, images, moduleKey) {
   var msgContent = content;
   if (images && images.length) {
     msgContent = [{type:'text', text:content}];
@@ -310,7 +310,7 @@ function callAPI(content, tokens, ok, fail, images) {
   }
   fetch(API, {
     method:'POST', headers:{'Content-Type':'application/json','X-CMA-Token': window.__CMA_T||''},
-    body: JSON.stringify({selected_model:SELECTED_MODEL, max_tokens:tokens, messages:[{role:'user',content:msgContent}]})
+    body: JSON.stringify({module_key:moduleKey||'followup', max_tokens:tokens, messages:[{role:'user',content:msgContent}]})
   })
   .then(function(r){return r.json();})
   .then(function(d){
@@ -543,6 +543,19 @@ function getQuickBirth(){
   };
 }
 
+function normalizeAskText(v){
+  if(v == null) return '';
+  if(typeof v === 'object') return JSON.stringify(v);
+  var s=String(v).trim();
+  try{
+    var parsed=JSON.parse(s.replace(/```json|```/g,'').trim());
+    if(parsed&&typeof parsed==='object'){
+      return parsed.analysis||parsed.summary||JSON.stringify(parsed);
+    }
+  }catch(e){}
+  return s.replace(/```json|```/g,'').trim();
+}
+
 function renderQuickAskCtas(category){
   var row=document.getElementById('ask-cta-row');
   if(!row)return;
@@ -588,7 +601,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
   document.getElementById('ask-loading').classList.add('on');
   document.getElementById('ask-btn').disabled=true;
   fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
-    body:JSON.stringify({question:q,birth:birth,selected_model:SELECTED_MODEL})
+    body:JSON.stringify({question:q,birth:birth})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
     if(j.needs_birth){
@@ -599,8 +612,8 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     }
     var d=j.data||{};
     document.getElementById('ask-category').textContent=j.category_label||cls.label;
-    document.getElementById('ask-summary').textContent=d.summary||'已完成基础判断';
-    document.getElementById('ask-analysis').textContent=d.analysis||'';
+    document.getElementById('ask-summary').textContent=normalizeAskText(d.summary)||'已完成基础判断';
+    document.getElementById('ask-analysis').textContent=normalizeAskText(d.analysis);
     var actions=document.getElementById('ask-actions');actions.innerHTML='';
     arrify(d.actions).forEach(function(a){
       var div=document.createElement('div');
@@ -813,7 +826,8 @@ document.getElementById('generate-btn').addEventListener('click',function(){
         refundProAccess();
         err('az-err',msg);
       },
-      images
+      images,
+      'fengshui'
     );
   }
 
@@ -996,7 +1010,9 @@ document.getElementById('followup-btn').addEventListener('click',function(){
       var el=document.getElementById('followup-answer');
       el.innerHTML='<div style="padding:10px;color:#E09090;font-size:12px">追问失败：'+msg+'</div>';
       el.classList.add('show');
-    }
+    },
+    null,
+    'followup'
   );
 });
 
@@ -1134,7 +1150,7 @@ document.getElementById('dreambtn').addEventListener('click',function(){
       document.getElementById('dreambtn').disabled=false;
       refundProAccess();
       err('dream-err',msg);
-    });
+    }, null, 'dream');
   }
 
   renderPromptFromBackend('dream_analysis', {
@@ -1223,7 +1239,9 @@ document.getElementById('alm-btn').addEventListener('click',function(){
       document.getElementById('home-pills').innerHTML=pills;
       saveHistory('今日黄历', ds+' 今日宜忌', '', j);
     },
-    function(msg){document.getElementById('alm-loading').classList.remove('on');document.getElementById('alm-btn').disabled=false;refundProAccess();err('alm-err',msg);}
+    function(msg){document.getElementById('alm-loading').classList.remove('on');document.getElementById('alm-btn').disabled=false;refundProAccess();err('alm-err',msg);},
+    null,
+    'almanac'
     );
   }
   renderPromptFromBackend('almanac_today', {date:ds}, function(){return P.almanac(ds);}, runAlmanac);
@@ -1253,7 +1271,7 @@ document.getElementById('profilebtn').addEventListener('click',function(){
   var parts = date.split('-');
   var hourVal = time ? parseInt(time) : null;
   fetch('/api/bazi',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
-    body:JSON.stringify({year:parts[0],month:parts[1],day:parts[2],hour:hourVal,gender:gender,selected_model:SELECTED_MODEL})
+    body:JSON.stringify({year:parts[0],month:parts[1],day:parts[2],hour:hourVal,gender:gender})
   }).then(function(r){return r.json();}).then(function(br){
     if(!br.ok){refundProAccess();err('prof-err','命理报告生成失败：'+((br.error&&br.error.message)||br.error||''));document.getElementById('prof-loading').classList.remove('on');document.getElementById('profilebtn').disabled=false;return;}
     document.getElementById('prof-loading').classList.remove('on');
@@ -1375,7 +1393,7 @@ document.getElementById('w-btn').addEventListener('click',function(){
   var parts2=date.split('-');
   var hourVal2=time?parseInt(time):null;
   fetch('/api/wealth',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
-    body:JSON.stringify({year:parts2[0],month:parts2[1],day:parts2[2],hour:hourVal2,gender:gender,goal:goal,selected_model:SELECTED_MODEL})
+    body:JSON.stringify({year:parts2[0],month:parts2[1],day:parts2[2],hour:hourVal2,gender:gender,goal:goal})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error){throw new Error(j.error.message||'财运分析失败');}
     document.getElementById('w-loading').classList.remove('on');
@@ -1501,7 +1519,9 @@ document.getElementById('w-followup-btn').addEventListener('click',function(){
       var el=document.getElementById('w-followup-answer');
       el.innerHTML='<div style="padding:10px;color:#E09090;font-size:12px">追问失败：'+msg+'</div>';
       el.classList.add('show');
-    }
+    },
+    null,
+    'followup'
   );
 });
 

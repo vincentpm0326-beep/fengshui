@@ -15,6 +15,31 @@ const app       = express();
 
 // ═══ Prompt 模板库（后台可动态维护） ═══
 const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
+const MODEL_SETTINGS_FILE = path.join(__dirname, 'data', 'model-settings.json');
+const MODEL_OPTIONS = [
+  {provider:'openrouter', model:'anthropic/claude-sonnet-4.6', name:'Claude Sonnet 4.6', recommended:['quick_ask','fengshui','dream','almanac','bazi','wealth','followup']},
+  {provider:'openrouter', model:'anthropic/claude-opus-4.6', name:'Claude Opus 4.6', recommended:['bazi','wealth','followup']},
+  {provider:'openrouter', model:'openai/gpt-4.1', name:'GPT-4.1', recommended:['quick_ask','almanac']},
+  {provider:'openrouter', model:'google/gemini-2.5-pro', name:'Gemini 2.5 Pro', recommended:['fengshui','dream']},
+  {provider:'openrouter', model:'x-ai/grok-4', name:'Grok 4', recommended:['quick_ask']},
+  {provider:'groq', model:'llama-3.3-70b-versatile', name:'Llama 3.3 70B Versatile', recommended:['quick_ask','almanac']}
+];
+const DEFAULT_MODEL_SETTINGS = {
+  providers: {
+    openrouter: { apiKey: '', updated_at: null },
+    groq: { apiKey: '', updated_at: null }
+  },
+  moduleModels: {
+    default: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' },
+    quick_ask: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' },
+    fengshui: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' },
+    dream: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' },
+    almanac: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' },
+    bazi: { provider:'openrouter', model:'anthropic/claude-opus-4.6' },
+    wealth: { provider:'openrouter', model:'anthropic/claude-opus-4.6' },
+    followup: { provider:'openrouter', model:'anthropic/claude-sonnet-4.6' }
+  }
+};
 const DEFAULT_PROMPTS = [
   {
     key: 'quick_ask_general',
@@ -147,6 +172,65 @@ function getPrompt(key){
 }
 function renderTemplate(tpl, vars){
   return String(tpl || '').replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] == null ? '' : String(vars[k]));
+}
+function loadModelSettings(){
+  ensureDataDir();
+  let settings = {};
+  try{
+    if(fs.existsSync(MODEL_SETTINGS_FILE)) settings = JSON.parse(fs.readFileSync(MODEL_SETTINGS_FILE, 'utf8'));
+  }catch(e){ settings = {}; }
+  return {
+    providers: {
+      openrouter: {...DEFAULT_MODEL_SETTINGS.providers.openrouter, ...(settings.providers?.openrouter||{})},
+      groq: {...DEFAULT_MODEL_SETTINGS.providers.groq, ...(settings.providers?.groq||{})}
+    },
+    moduleModels: {...DEFAULT_MODEL_SETTINGS.moduleModels, ...(settings.moduleModels||{})}
+  };
+}
+function saveModelSettings(settings){
+  ensureDataDir();
+  fs.writeFileSync(MODEL_SETTINGS_FILE, JSON.stringify(settings, null, 2), {encoding:'utf8', mode:0o600});
+  try{ fs.chmodSync(MODEL_SETTINGS_FILE, 0o600); }catch(e){}
+}
+function maskKey(key){
+  if(!key) return '';
+  if(key.length <= 10) return key.slice(0,2)+'***'+key.slice(-2);
+  return key.slice(0,6)+'***'+key.slice(-4);
+}
+function publicModelSettings(){
+  const settings = loadModelSettings();
+  return {
+    providers: {
+      openrouter: {
+        has_key: !!(process.env.OPENROUTER_API_KEY || settings.providers.openrouter.apiKey),
+        key_mask: process.env.OPENROUTER_API_KEY ? 'ENV:'+maskKey(process.env.OPENROUTER_API_KEY) : maskKey(settings.providers.openrouter.apiKey),
+        updated_at: settings.providers.openrouter.updated_at
+      },
+      groq: {
+        has_key: !!(process.env.GROQ_API_KEY || settings.providers.groq.apiKey),
+        key_mask: process.env.GROQ_API_KEY ? 'ENV:'+maskKey(process.env.GROQ_API_KEY) : maskKey(settings.providers.groq.apiKey),
+        updated_at: settings.providers.groq.updated_at
+      }
+    },
+    moduleModels: settings.moduleModels,
+    modelOptions: MODEL_OPTIONS
+  };
+}
+function providerKey(provider){
+  const settings = loadModelSettings();
+  if(provider === 'openrouter') return process.env.OPENROUTER_API_KEY || settings.providers.openrouter.apiKey;
+  if(provider === 'groq') return process.env.GROQ_API_KEY || settings.providers.groq.apiKey;
+  return '';
+}
+function modelConfigFor(moduleKey, requestedModel){
+  if(requestedModel && requestedModel !== 'groq'){
+    return { provider:'openrouter', model:requestedModel };
+  }
+  if(requestedModel === 'groq'){
+    return { provider:'groq', model:'llama-3.3-70b-versatile' };
+  }
+  const settings = loadModelSettings();
+  return settings.moduleModels[moduleKey] || settings.moduleModels.default || DEFAULT_MODEL_SETTINGS.moduleModels.default;
 }
 
 // ═══ 信任 Nginx 反向代理（修复 X-Forwarded-For 限流问题） ═══
@@ -393,13 +477,13 @@ function calcBazi(year,month,day,hour,gender){
 }
 
 // ═══ Groq API 调用 ═══
-async function callGroq(messages, maxTokens=2000){
-  const apiKey=process.env.GROQ_API_KEY;
+async function callGroq(messages, maxTokens=2000, model='llama-3.3-70b-versatile'){
+  const apiKey=providerKey('groq');
   if(!apiKey) throw new Error('请设置环境变量 GROQ_API_KEY');
   const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-    body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:maxTokens,temperature:0.7,messages})
+    body:JSON.stringify({model,max_tokens:maxTokens,temperature:0.7,messages})
   });
   const data=await res.json();
   if(data.error) throw new Error(data.error.message);
@@ -408,7 +492,7 @@ async function callGroq(messages, maxTokens=2000){
 
 // ═══ OpenRouter API 调用（兼容 Claude / Llama 等所有模型） ═══
 async function callOpenRouter(messages, maxTokens=4000, model='anthropic/claude-opus-4.6'){
-  const apiKey=process.env.OPENROUTER_API_KEY;
+  const apiKey=providerKey('openrouter');
   if(!apiKey) throw new Error('请设置环境变量 OPENROUTER_API_KEY（openrouter.ai 免费注册）');
   const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
     method:'POST',
@@ -426,15 +510,17 @@ async function callOpenRouter(messages, maxTokens=4000, model='anthropic/claude-
 }
 
 // ═══ 统一调度：根据 model 参数路由到对应 LLM ═══
-async function callLLM(messages, maxTokens=2000, model='groq'){
-  if(!model||model==='groq'){
+async function callLLM(messages, maxTokens=2000, config='groq'){
+  const provider = typeof config === 'object' ? config.provider : (config === 'groq' ? 'groq' : 'openrouter');
+  const model = typeof config === 'object' ? config.model : (config || 'llama-3.3-70b-versatile');
+  if(provider === 'groq'){
     // Groq 不支持视觉，剥离图片内容后调用
     const textMsgs=messages.map(m=>({
       role:m.role,
       content:typeof m.content==='string'?m.content:
         Array.isArray(m.content)?m.content.filter(b=>b.type==='text').map(b=>b.text).join('\n'):m.content
     }));
-    return callGroq(textMsgs,maxTokens);
+    return callGroq(textMsgs,maxTokens,model || 'llama-3.3-70b-versatile');
   }
   return callOpenRouter(messages,maxTokens,model);
 }
@@ -447,6 +533,31 @@ function extractJSON(text){
   const e = stripped.lastIndexOf('}');
   if(s<0||e<=s) throw new Error('No JSON object found');
   return JSON.parse(stripped.substring(s, e+1));
+}
+function safeExtractJSON(text){
+  try{ return extractJSON(text); }catch(e){}
+  const t = String(text || '').trim();
+  try{
+    const parsed = JSON.parse(t);
+    if(typeof parsed === 'string') return safeExtractJSON(parsed);
+    return parsed;
+  }catch(e){}
+  return null;
+}
+function normalizeQuickAskResult(data, rawText){
+  let d = data || safeExtractJSON(rawText) || {};
+  if(typeof d === 'string') d = safeExtractJSON(d) || { analysis:d };
+  ['summary','analysis','upgrade_hint','consult_hint','timing'].forEach(k => {
+    if(typeof d[k] === 'string'){
+      const nested = safeExtractJSON(d[k]);
+      if(nested && (nested.analysis || nested.summary)) d = {...nested, ...d, [k]: nested[k] || d[k]};
+    }
+  });
+  if(!d.summary) d.summary = '已完成问事判断';
+  if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
+  if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
+  if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
+  return d;
 }
 
 function classifyQuestion(question){
@@ -478,9 +589,9 @@ function buildBaziContext(birth){
   };
 }
 
-function hasModelKey(model){
-  if(!model || model === 'groq') return !!process.env.GROQ_API_KEY;
-  return !!process.env.OPENROUTER_API_KEY;
+function hasModelKey(config){
+  const provider = typeof config === 'object' ? config.provider : (config === 'groq' ? 'groq' : 'openrouter');
+  return !!providerKey(provider);
 }
 
 function buildQuickAskFallback(question, cls, hasBirth){
@@ -531,7 +642,8 @@ app.post('/api/chat', requireToken, async(req,res)=>{
     });
 
     const hasImages = msgs.some(m => Array.isArray(m.content) && m.content.some(b => b.type === 'image_url'));
-    const model = hasImages ? 'anthropic/claude-sonnet-4-5' : (req.body.selected_model || 'groq');
+    const moduleKey = String(req.body.module_key || (hasImages ? 'fengshui' : 'followup'));
+    const model = modelConfigFor(moduleKey, req.body.allow_model_override ? req.body.selected_model : null);
     const maxTok = Math.min(parseInt(req.body.max_tokens) || 4000, 6000);
     const text = await callLLM(msgs, maxTok, model);
     res.json({ content: [{ type: 'text', text }] });
@@ -567,8 +679,8 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
       bazi_context: birthInfo?.baziContext || ''
     };
     const prompt = renderTemplate(promptTpl?.content, vars);
-    let model = req.body.selected_model || 'groq';
-    if(!hasModelKey(model) && hasModelKey('groq')) model = 'groq';
+    let model = modelConfigFor('quick_ask', req.body.allow_model_override ? req.body.selected_model : null);
+    if(!hasModelKey(model) && hasModelKey({provider:'groq',model:'llama-3.3-70b-versatile'})) model = {provider:'groq',model:'llama-3.3-70b-versatile'};
     if(!hasModelKey(model)){
       return res.json({
         ok:true,
@@ -580,9 +692,7 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
       });
     }
     const text = await callLLM([{ role:'user', content: prompt }], 2500, model);
-    let data;
-    try{ data = extractJSON(text); }
-    catch(e){ data = { summary:'已完成基础判断', analysis:text.slice(0, 1200), actions:[], upgrade_hint:'', consult_hint:'' }; }
+    const data = normalizeQuickAskResult(null, text);
     res.json({ ok:true, needs_birth:false, category:cls.category, category_label:cls.label, data });
   }catch(e){
     res.status(500).json({ error: { message: '快捷问事服务暂时不可用，请稍后重试' } });
@@ -618,7 +728,7 @@ app.post('/api/bazi', requireToken, async(req,res)=>{
 
     const bazi=calcBazi(y, mo, d,
       hour!==null&&hour!==undefined?parseInt(hour):null, gender||'男');
-    const model=req.body.selected_model||'groq';
+    const model=modelConfigFor('bazi', req.body.allow_model_override ? req.body.selected_model : null);
 
     // 公共命盘上下文
     const ctx=`【四柱】年${bazi.pillars.year.gan}${bazi.pillars.year.zhi} 月${bazi.pillars.month.gan}${bazi.pillars.month.zhi} 日${bazi.pillars.day.gan}${bazi.pillars.day.zhi} 时${bazi.pillars.hour.gan}${bazi.pillars.hour.zhi}
@@ -720,7 +830,7 @@ app.post('/api/wealth', requireToken, async(req,res)=>{
 
     const bazi=calcBazi(y, mo, d,
       hour!==null&&hour!==undefined?parseInt(hour):null, gender||'男');
-    const wModel=req.body.selected_model||'groq';
+    const wModel=modelConfigFor('wealth', req.body.allow_model_override ? req.body.selected_model : null);
     const goalStr=String(goal||'整体财运').slice(0,50);
 
     const wctx=`【四柱】年${bazi.pillars.year.gan}${bazi.pillars.year.zhi} 月${bazi.pillars.month.gan}${bazi.pillars.month.zhi} 日${bazi.pillars.day.gan}${bazi.pillars.day.zhi} 时${bazi.pillars.hour.gan}${bazi.pillars.hour.zhi}
@@ -925,6 +1035,38 @@ app.post('/api/admin/prompts/reset',(req,res)=>{
   else prompts.push(next);
   savePrompts(prompts);
   res.json({ok:true,prompt:next});
+});
+// 模型与密钥配置（密钥只保存后端，前端永不回显明文）
+app.get('/api/admin/model-settings',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  res.json({ok:true,settings:publicModelSettings()});
+});
+app.post('/api/admin/model-settings',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  const current = loadModelSettings();
+  const incoming = req.body || {};
+  const now = new Date().toISOString();
+
+  ['openrouter','groq'].forEach(provider => {
+    const val = incoming.providers?.[provider]?.apiKey;
+    if(typeof val === 'string' && val.trim()){
+      current.providers[provider].apiKey = val.trim();
+      current.providers[provider].updated_at = now;
+    }
+  });
+
+  if(incoming.moduleModels && typeof incoming.moduleModels === 'object'){
+    Object.keys(DEFAULT_MODEL_SETTINGS.moduleModels).forEach(moduleKey => {
+      const cfg = incoming.moduleModels[moduleKey];
+      if(!cfg) return;
+      const provider = cfg.provider === 'groq' ? 'groq' : 'openrouter';
+      const model = String(cfg.model || '').trim();
+      if(model) current.moduleModels[moduleKey] = {provider, model};
+    });
+  }
+
+  saveModelSettings(current);
+  res.json({ok:true,settings:publicModelSettings()});
 });
 // 撤销/删除激活码
 app.post('/api/admin/revoke',(req,res)=>{
