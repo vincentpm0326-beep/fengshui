@@ -25,6 +25,7 @@ if(!process.env.INTERNAL_TOKEN){
 
 // ═══ 安全：CORS 白名单（只允许自己的域名） ═══
 // CORS：放开所有来源，安全由 X-CMA-Token 令牌保证
+// 生产域名：aicopyme.com
 app.use(cors({
   origin: true,
   methods: ['GET','POST'],
