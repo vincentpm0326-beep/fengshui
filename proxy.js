@@ -755,18 +755,48 @@ function tolerantQuickAskObject(text){
   parsed.actions = pickJsonishActions(t);
   return parsed.analysis || parsed.summary || parsed.actions.length ? parsed : null;
 }
-function summaryFromPlainText(text){
-  const lines = cleanJsonishText(text)
-    .split(/\n+/)
-    .map(s => s.replace(/^#+\s*/, '').trim())
-    .filter(Boolean);
-  const finalIdx = lines.findIndex(s => /最终结论|结论|建议/.test(s));
-  if(finalIdx >= 0){
-    const sameLine = lines[finalIdx].replace(/^.*?[：:]/, '').trim();
-    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
-    if(lines[finalIdx + 1]) return lines[finalIdx + 1].slice(0, 60);
+function cleanDisplayMarkdown(text){
+  return cleanJsonishText(text)
+    .replace(/\r/g, '')
+    .replace(/^[ \t]*---+[ \t]*$/gm, '')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^[ \t]*>[ \t]*/gm, '')
+    .replace(/^[ \t]*[-*]\s+/gm, '• ')
+    .replace(/^[ \t]*[✅⚠️]\s*/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+function cleanQuickAskAnalysis(text){
+  const lines = cleanDisplayMarkdown(text).split('\n');
+  while(lines.length && /^(?:[二三四五六七八九十]+|[2-9])[、.．]\s*(?:问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示|最终结论|结论|建议)?\s*$/.test(lines[0].trim())){
+    lines.shift();
   }
-  const first = lines.find(s => !/^(一|二|三|四|五|六|七|八|九|十)[、.．]/.test(s) && !/^[-*]\s*$/.test(s));
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function stripSectionTitle(text){
+  return cleanDisplayMarkdown(text)
+    .replace(/^(?:[一二三四五六七八九十]+|[0-9]+)[、.．]\s*/, '')
+    .replace(/^(?:问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示|最终结论|结论|建议)[：:]?\s*/, '')
+    .trim();
+}
+function summaryFromPlainText(text){
+  const lines = cleanDisplayMarkdown(text)
+    .split(/\n+/)
+    .map(s => stripSectionTitle(s))
+    .filter(Boolean);
+  const rawLines = cleanDisplayMarkdown(text).split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const finalIdx = rawLines.findIndex(s => /^(?:[六七八九十]+[、.．]\s*)?最终结论[：:]?$/.test(stripSectionTitle(s)) || /最终结论/.test(s));
+  if(finalIdx >= 0){
+    const sameLine = stripSectionTitle(rawLines[finalIdx].replace(/^.*?[：:]/, '').trim());
+    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
+    if(rawLines[finalIdx + 1]) return stripSectionTitle(rawLines[finalIdx + 1]).slice(0, 60);
+  }
+  const conclusionIdx = rawLines.findIndex(s => /^(?:[一二三四五六七八九十]+[、.．]\s*)?结论[：:]?$/.test(stripSectionTitle(s)));
+  if(conclusionIdx >= 0 && rawLines[conclusionIdx + 1]) return stripSectionTitle(rawLines[conclusionIdx + 1]).slice(0, 60);
+  const first = lines.find(s => !/^(问题性质判断|当前时机判断|国学咨询角度说明|现实执行建议|风险提示)$/.test(s));
   return first ? first.slice(0, 60) : '';
 }
 function normalizeQuickAskResult(data, rawText){
@@ -778,11 +808,16 @@ function normalizeQuickAskResult(data, rawText){
       if(nested && (nested.analysis || nested.summary)) d = {...d, ...nested};
     }
   });
-  if(!d.summary) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
+  if(!d.summary || /现实执行建议|问题性质判断|当前时机判断|风险提示/.test(d.summary)) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
   if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
   if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
   if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
-  d.analysis = cleanJsonishText(d.analysis);
+  d.summary = cleanDisplayMarkdown(d.summary);
+  d.analysis = cleanQuickAskAnalysis(d.analysis);
+  d.upgrade_hint = cleanDisplayMarkdown(d.upgrade_hint || '');
+  d.consult_hint = cleanDisplayMarkdown(d.consult_hint || '');
+  d.timing = cleanDisplayMarkdown(d.timing || '');
+  d.actions = d.actions.map(a => cleanDisplayMarkdown(a)).filter(Boolean);
   if(/^\s*\{/.test(d.analysis) && d.analysis.indexOf('"analysis"') >= 0){
     const nested = tolerantQuickAskObject(d.analysis);
     if(nested) d = {...d, ...nested};
@@ -827,61 +862,62 @@ function hasModelKey(config){
 function buildQuickAskFallback(question, cls, hasBirth){
   const q = String(question || '');
   const isInterview = /面试|offer|录取|hr|HR|复试|终面/.test(q);
+  const todayLabel = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
   const direct = {
     timing: {
-      summary: '可以推进，但先把风险点核清。',
-      analysis: '这类事情更看“事项是否可逆、责任是否明确、时间是否紧迫”。如果是签约、付款、开业、沟通等具体事项，建议先小步推进，关键条款和承诺不要口头化；如果成本较高或后果不可逆，宁可多留一次确认窗口。'
+      summary: '事可动，但宜缓中求成。',
+      analysis: `以问事看，此事气机已动，但不宜猛推。今日所问落在“择时与取势”，象意偏向先开门、后定局：有推进空间，但关键在条款、承诺与时间点是否合拍。若事项可逆，可小步试行；若涉及签约、付款、开业等重事，则宜先核细节，再择稳时落定。`
     },
     dream: {
-      summary: '先看情绪信号，不宜直接当预兆。',
-      analysis: '梦境更适合作为近期压力、关系牵挂或潜意识提醒来看。重点不是梦到什么就一定发生什么，而是醒来后的情绪强度、梦境是否反复、现实中是否有对应压力源。今天不建议因梦境直接做重大决定。'
+      summary: '梦有提醒，不宜当成定数。',
+      analysis: '从梦象看，重点不在“必然应验”，而在梦中意象所带出的气：若醒后情绪重，多主心神牵挂；若反复出现同类场景，多主现实中有未解之事。此梦更像提醒你留意近期关系、压力或选择，不宜直接据梦做重大决定。'
     },
     fengshui: {
-      summary: '先看动线、采光和关键位置。',
-      analysis: '空间问题最先看门窗动线、床/桌/沙发位置、采光通风和镜子横梁等高频风险。只凭一句描述很难判断全局，但如果已经感觉压抑、杂乱或动线冲突，可以先从清理入口、稳定主位、减少对冲开始。'
+      summary: '先看气口，再看主位。',
+      analysis: '从风水问事看，空间成败先看气口，再看主位。门窗为气入之处，床、桌、沙发为人承气之位；若入口堵、动线冲、主位无靠，则多主心神不稳、做事反复。若只是初步判断，可先看明堂是否开阔、主位是否有靠、镜梁冲煞是否明显。'
     },
     wealth: {
-      summary: '先控风险，再看增收机会。',
-      analysis: '财运问题不要只问旺不旺，先拆成收入来源、支出漏洞、合作风险和短期现金流。近期适合先做复盘和收口，不宜因为焦虑贸然加杠杆或追高投入；真正要看周期，可进入财运分析做专属承接。'
+      summary: '财气未闭，但不宜冒进。',
+      analysis: '从财事象意看，当前更像“有财机但气未聚”。财来要看门路是否正、现金流是否稳、合作方是否可靠；若只见机会、不见落袋，仍属虚财。近期宜守中带攻，先堵破财口，再看增收门路；大额投入、借贷加码和高风险机会不宜急进。'
     },
     career: {
-      summary: isInterview ? '有机会，但别只等结果。' : '先稳住节奏，再推进关键动作。',
+      summary: isInterview ? '有成象，但结果未定。' : '事业气机已动，宜顺势推进。',
       analysis: isInterview
-        ? '昨天的面试是否有好结果，核心看三点：你的岗位匹配度、面试官当场反馈、以及后续沟通是否顺畅。现在不建议反复猜结果，最有效的是在24到48小时内发一条简短感谢或补充信息，表达兴趣、强化匹配点，同时继续推进备选机会。若3到5个工作日没有反馈，再做一次礼貌跟进。'
-        : '事业决策先看岗位匹配、资源筹码、合作关系和行动窗口。现在适合把目标拆清楚：是争取机会、换环境、谈条件，还是降低风险。不要只凭情绪判断去留，先拿到更多确定信息，再决定是否加速推进。'
+        ? `以问事看，昨日面试之象不算空亡，属于“有回音、有待定”的局。面试已过，主动权暂时转到对方，象上不是立即落定，而是需要内部流转、比较、确认。若现场沟通顺、对方追问细节或谈到后续流程，则成象更明；若只是礼貌收尾，则仍有竞争。应期可看未来3到7个工作日，先有消息再定结果。`
+        : '以事业问事看，当前气机已动，属于可争取、可推进之象，但不是硬冲之局。此事成败取决于三点：上方是否给口、资源是否到位、时机是否顺手。若已有明确邀约或窗口，可顺势推进；若信息仍虚，则宜先探口风，再落行动。'
     },
     relationship: {
-      summary: '先看行动稳定性，不急着定性。',
-      analysis: '感情问题最容易被情绪放大。当前先看对方是否持续投入、沟通是否稳定、冲突是否能被修复，而不是只看一两句话或一次态度。短期适合降低试探，做一次清晰但不过度施压的沟通。'
+      summary: '情势未断，先看回应。',
+      analysis: '从感情问事看，此事不宜只凭一时情绪定吉凶。若对方仍有回应、仍愿沟通，象上为“线未断”；若反复冷淡、避谈关键，则气已散。短期最忌逼问和试探，宜看对方是否有持续行动，行动比话更能定象。'
     },
     fortune: {
-      summary: '先拆问题来源，再决定怎么动。',
-      analysis: '“不顺”通常不是单一原因，先拆成事业、财务、关系、健康和环境五类。最近适合先处理反复拖延、反复出错、反复消耗你的环节；重大决定不要同时开太多线，先收敛再推进。'
+      summary: '气势有阻，先收后开。',
+      analysis: '从运势问事看，当前更像“气滞未通”，不是完全无路，而是多处牵制：事情容易拖、沟通易反复、心气不稳。此时不宜同时开多条线，宜先清掉拖延、破耗和反复出错之处；等阻点松动后，再推进大事。'
     },
     compatibility: {
-      summary: '先看现实匹配，再谈深层适配。',
-      analysis: '关系匹配不能只看感觉，要看价值观、金钱观、家庭边界、冲突处理和长期目标是否一致。当前适合观察对方在压力场景下的行动，而不是只听承诺。需要更深判断时，再进入合盘或真人咨询承接。'
+      summary: '缘分有线，合不合看承接。',
+      analysis: '合盘类问事若无双方完整生辰，只能先看现实之象：能否互相承接、冲突后能否回转、关键价值观是否相抵。若彼此有吸引但边界、金钱或家庭议题反复起冲，则为有缘有耗；若遇事能商量、能落地，则合象更稳。'
     },
     general: {
-      summary: '先把目标和风险说清楚。',
-      analysis: '这件事要先明确：你想得到什么结果、最担心什么、是否有时间压力、失败成本高不高。能马上验证的信息先用现实依据判断，不能验证的部分再作为辅助参考。现在适合先做小步试探，不宜一次性押上全部筹码。'
+      summary: '事有可为，但不宜急定。',
+      analysis: '从问事角度看，此事不是死局，但气尚未完全成形。现在更适合先探、再定、后推进：若对方有回应、条件逐步清晰，则可顺势加力；若信息含糊、阻滞反复，则宜暂缓落大决定。成败关键在“时机是否成熟、承接是否到位”。'
     }
   };
   const commonActions = {
-    timing: ['先确认事项是否必须今天完成，非刚需可优先选择上午沟通。', '签约、付款、开业类事项建议避开情绪波动时段，先复核关键条款。', '如金额较大，可进入黄历或命理报告做专属分析。'],
-    dream: ['记录梦中最强烈的意象和醒来情绪，先判断它对应压力、关系还是财务主题。', '今天避免因梦境直接做重大决定，先观察现实中是否有相同信号。', '如果同类梦反复出现，可继续做梦境深度解析。'],
-    fengshui: ['先补充户型、朝向、门窗、床/桌/沙发位置，判断会更准确。', '优先检查门窗对冲、床头无靠、镜子对床、横梁压顶这些高频问题。', '涉及买房、装修、办公位调整时，建议上传图片做完整风水诊断。'],
-    wealth: ['先区分这是短期求财、长期收入，还是破财风险问题。', '近期不要只看单一机会，先复盘收入来源、支出漏洞和合作风险。', '需要结合财星、流年、大运时，进入深度财运分析模块。'],
-    career: ['先明确当前是跳槽、升职、创业还是合作选择，不同问题判断标准不同。', '短期先看现实筹码：资源、现金流、贵人支持和风险承受力。', '需要结合命盘趋势时，进入命理报告模块做专属分析。'],
-    relationship: ['先区分关系处在暧昧、磨合、冲突还是决策阶段。', '今天不建议只凭情绪做结论，先看对方行动是否稳定。', '需要看关系节奏与适配度时，进入命理报告或真人咨询承接。'],
-    fortune: ['先把“不顺”拆成事业、财务、感情、健康或家宅环境，避免泛泛判断。', '短期先减少高风险决策，优先处理拖延事项和反复出错的环节。', '运势趋势类问题需要出生信息，结合流年/月运判断会更有价值。'],
-    compatibility: ['合盘类问题需要双方出生信息，单靠一句描述只能做关系沟通建议。', '先观察价值观、金钱观、家庭边界和冲突处理方式。', '建议补充双方生日后做合盘或真人咨询。'],
-    general: ['先把问题具体化为时间、对象、事项和你担心的结果。', '能马上验证的信息先用现实依据判断，国学分析适合做辅助决策。', '如果问题牵涉长期运势，可进入命理报告做深度分析。']
+    timing: ['取法：先看今日宜忌与事项轻重，轻事可动，重事择稳时。', '阻点：条款不明、口头承诺、时间仓促，会削弱成事之气。', '应期：若今日必须推进，宜先小定不大定，留一次复核窗口。'],
+    dream: ['取象：先记醒后情绪，情绪越重，现实牵挂越深。', '阻点：不要把单次梦象当定局，反复梦才更有参考价值。', '应期：未来三日观察现实中是否有同类信号出现。'],
+    fengshui: ['取法：先看气口是否通、主位是否稳、明堂是否开。', '阻点：门窗对冲、主位无靠、镜梁冲压，会让人事反复。', '应对：先调入口和主位，再看财位、文昌位等细分布局。'],
+    wealth: ['取象：有机会不等于财已入库，先看钱是否能落袋。', '阻点：合作不明、支出过快、承诺过满，多主财气外泄。', '应期：短期宜守财聚气，等条件清楚再加码。'],
+    career: ['取象：先看对方是否给后续口径，有口则有门。', '阻点：流程拖延、竞争者比较、内部审批，会让结果后置。', '应期：三到七个工作日内看回音，先有信号再定成败。'],
+    relationship: ['取象：看回应是否连续，连续则线未断。', '阻点：反复试探、情绪逼问，会使气散。', '应期：短期看一次自然沟通后的态度变化。'],
+    fortune: ['取象：先找反复卡住的环节，那里就是阻气点。', '阻点：多线并进、心气浮动、旧事未清，会拖慢转机。', '应期：先收拾一件拖延事，气顺后再开新局。'],
+    compatibility: ['取象：看遇事能否承接，而不是只看吸引感。', '阻点：边界、金钱、家庭议题反复起冲，会耗缘分。', '应期：下一次冲突后的修复质量，比平时甜言更准。'],
+    general: ['取象：先看事是否有回应、有口径、有承接。', '阻点：信息虚、承诺空、时机急，是不成的主要信号。', '应期：先试一小步，看对方回音再决定是否加力。']
   };
   const actions = isInterview ? [
-    '24到48小时内发一条简短感谢信息，重点补一句你和岗位匹配的能力或经验。',
-    '不要只等这一家结果，同步推进1到2个备选机会，避免等待期心态失衡。',
-    '如果3到5个工作日没有反馈，再礼貌跟进一次；不要连续催问或过早谈条件。'
+    '取象：若面试中对方追问细节、介绍后续流程，属于“有门”；若只是客套收尾，则还在比较。',
+    '阻点：此事不怕等，怕急催。急催会破“待定之气”，让原本可成之象变弱。',
+    '应期：未来3到7个工作日看第一次回音；若无回音，再礼貌跟进一次。'
   ] : (commonActions[cls.category] || commonActions.general);
   const base = direct[cls.category] || direct.general;
   return {
@@ -890,7 +926,7 @@ function buildQuickAskFallback(question, cls, hasBirth){
     summary: base.summary,
     analysis: base.analysis,
     actions,
-    timing: cls.category === 'timing' ? '普通择事可先看今日宜忌；重大事项建议进一步做个人择日。' : '',
+    timing: isInterview ? '应期看3到7个工作日；先有回音，再看录取或下一轮。' : (cls.category === 'timing' ? `以${todayLabel}为问事日，轻事可小动，重事宜再择稳时。` : ''),
     upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '可进入命理报告、财运分析或真人咨询做专属承接。',
     consult_hint: cls.category === 'career' ? '若涉及异地、薪资大幅变化或是否离职，可进一步真人咨询。' : '涉及买房、投资、婚姻、开业等高成本决策时，建议真人咨询。',
     fallback: true
@@ -911,8 +947,9 @@ ${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 1. 必须直接回答“本次用户问题”，不要泛泛复述模板。
 2. 不要写旁白、开场白、角色自述、分析计划，例如“下面我将”“作为顾问”“我会从几个方面”。
 3. 如果后台 Prompt 规定了固定结构，请严格按该结构输出最终内容。
-4. 快捷问事固定使用通用问事逻辑，不在这里展开八字命理；如需命理深度分析，只在结果中自然引导去命理报告/财运分析等专属模块。
-5. 不要输出与用户问题无关的说明。`;
+4. 输出要有国学问事/算事的判断感：成败倾向、事象、阻滞点、应期、取法；不要只给现代职场/生活建议。
+5. 快捷问事固定使用通用问事逻辑，不在这里展开八字命理；如需命理深度分析，只在结果中自然引导去命理报告/财运分析等专属模块。
+6. 不要输出与用户问题无关的说明。`;
 }
 
 // ═══ 通用聊天接口（解梦、黄历、风水、追问） ═══
