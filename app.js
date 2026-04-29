@@ -892,7 +892,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
   document.getElementById('ask-result').classList.remove('show');
   document.getElementById('ask-loading').classList.add('on');
   document.getElementById('ask-btn').disabled=true;
-  fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
+  fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||'','Authorization':'Bearer '+AUTH_TOKEN},
     body:JSON.stringify({question:q,birth:birth})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
@@ -908,6 +908,10 @@ document.getElementById('ask-btn').addEventListener('click',function(){
       actions.appendChild(div);
     });
     document.getElementById('ask-upgrade').textContent=d.upgrade_hint||d.timing||'可继续请师傅详批命理、财运或风水。';
+    if((j.needs_birth || d.need_birth) && panel){
+      panel.classList.add('show');
+      document.getElementById('ask-upgrade').textContent='补充生辰后，师傅可合参八字、大运与流年，判断会更贴合你本人。';
+    }
     document.getElementById('ask-consult').textContent=d.consult_hint||'涉及买房、投资、婚姻、开业等高成本决策时，建议进一步真人咨询。';
     renderQuickAskCtas(j.category||cls.category);
     document.getElementById('ask-result').classList.add('show');
