@@ -703,19 +703,64 @@ function safeExtractJSON(text){
   }catch(e){}
   return null;
 }
+function cleanJsonishText(text){
+  return String(text || '')
+    .replace(/```json\s*/gi,'')
+    .replace(/```\s*/g,'')
+    .trim();
+}
+function pickJsonishField(text, key){
+  const t = cleanJsonishText(text);
+  const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*,\\s*"(category|need_birth|summary|analysis|actions|timing|upgrade_hint|consult_hint)"\\s*:', 'i');
+  const m = t.match(re);
+  if(m) return m[1].replace(/\\"/g,'"').trim();
+  const tail = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*\\}?\\s*$', 'i').exec(t);
+  return tail ? tail[1].replace(/\\"/g,'"').trim() : '';
+}
+function pickJsonishActions(text){
+  const t = cleanJsonishText(text);
+  const m = t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*,\s*"(timing|upgrade_hint|consult_hint)"\s*:/i) ||
+    t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*\}?$/i);
+  if(!m) return [];
+  const actions = [];
+  let item;
+  const re = /"([\s\S]*?)"\s*(?:,|$)/g;
+  while((item = re.exec(m[1]))){
+    const val = item[1].replace(/\\"/g,'"').trim();
+    if(val) actions.push(val);
+  }
+  return actions;
+}
+function tolerantQuickAskObject(text){
+  const t = cleanJsonishText(text);
+  if(!/^\s*\{/.test(t) || t.indexOf('"analysis"') < 0) return null;
+  const parsed = {};
+  ['category','summary','analysis','timing','upgrade_hint','consult_hint'].forEach(k => {
+    const v = pickJsonishField(t, k);
+    if(v) parsed[k] = v;
+  });
+  parsed.need_birth = /"need_birth"\s*:\s*true/i.test(t);
+  parsed.actions = pickJsonishActions(t);
+  return parsed.analysis || parsed.summary || parsed.actions.length ? parsed : null;
+}
 function normalizeQuickAskResult(data, rawText){
-  let d = data || safeExtractJSON(rawText) || {};
-  if(typeof d === 'string') d = safeExtractJSON(d) || { analysis:d };
+  let d = data || safeExtractJSON(rawText) || tolerantQuickAskObject(rawText) || {};
+  if(typeof d === 'string') d = safeExtractJSON(d) || tolerantQuickAskObject(d) || { analysis:d };
   ['summary','analysis','upgrade_hint','consult_hint','timing'].forEach(k => {
     if(typeof d[k] === 'string'){
-      const nested = safeExtractJSON(d[k]);
-      if(nested && (nested.analysis || nested.summary)) d = {...nested, ...d, [k]: nested[k] || d[k]};
+      const nested = safeExtractJSON(d[k]) || tolerantQuickAskObject(d[k]);
+      if(nested && (nested.analysis || nested.summary)) d = {...d, ...nested};
     }
   });
   if(!d.summary) d.summary = '已完成问事判断';
   if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
   if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
   if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
+  d.analysis = cleanJsonishText(d.analysis);
+  if(/^\s*\{/.test(d.analysis) && d.analysis.indexOf('"analysis"') >= 0){
+    const nested = tolerantQuickAskObject(d.analysis);
+    if(nested) d = {...d, ...nested};
+  }
   return d;
 }
 
