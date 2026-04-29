@@ -7,8 +7,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--gold:#C9A84C;--gdim:#7A5E2A;--crim:#8B1A1A;--ink:#0A0A0F;--ink2:#12121A;--ink3:#1A1A26;--ink4:#22223A;--tp:#F0E8D0;--ts:#9A8A6A;--td:#5A4A3A;--b:rgba(201,168,76,0.2);--bs:rgba(201,168,76,0.45)}
-body{background:var(--ink);color:var(--tp);font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;font-size:14px;min-height:100vh;padding:20px}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:0.5px solid var(--b);margin-bottom:24px;background:rgba(10,10,15,0.95);border-radius:10px}
+body{background:var(--ink);color:var(--tp);font-family:'PingFang SC','Noto Sans SC','Microsoft YaHei',sans-serif;font-size:14px;min-height:100vh;padding:0}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:0.5px solid var(--b);background:rgba(10,10,15,0.95)}
 .logo{font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.1em}
 .badge{background:rgba(139,26,26,0.5);color:#FFB0B0;font-size:10px;padding:3px 10px;border-radius:10px}
 .login-card{max-width:400px;margin:80px auto;background:var(--ink2);border:0.5px solid var(--b);border-radius:14px;padding:30px;text-align:center}
@@ -22,7 +22,23 @@ body{background:var(--ink);color:var(--tp);font-family:'PingFang SC','Noto Sans 
 .btn-sm:hover{background:rgba(201,168,76,0.1)}
 .btn-danger{padding:5px 10px;background:none;border:0.5px solid rgba(139,26,26,0.5);border-radius:5px;color:#E08080;font-size:11px;cursor:pointer;font-family:inherit;transition:all .18s}
 .btn-danger:hover{background:rgba(139,26,26,0.15)}
-.section{max-width:1000px;margin:0 auto 24px}
+.admin-shell{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:calc(100vh - 58px)}
+.sidebar{border-right:0.5px solid var(--b);background:rgba(18,18,26,0.72);padding:18px 14px;position:sticky;top:0;height:calc(100vh - 58px)}
+.side-group-label{font-size:10px;color:var(--td);letter-spacing:.16em;margin:16px 10px 8px}
+.menu-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;background:none;border:0.5px solid transparent;border-radius:8px;color:var(--ts);font-size:13px;font-family:inherit;cursor:pointer;text-align:left;transition:all .18s;margin-bottom:4px}
+.menu-btn:hover{background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.12);color:var(--tp)}
+.menu-btn.on{background:rgba(201,168,76,0.1);border-color:var(--b);color:var(--gold);font-weight:600}
+.menu-main{display:flex;align-items:center;gap:9px;min-width:0}
+.menu-icon{width:20px;text-align:center;color:var(--gold);opacity:.9}
+.menu-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-count{font-size:10px;color:var(--td);background:rgba(201,168,76,0.08);border:0.5px solid rgba(201,168,76,0.1);border-radius:10px;padding:2px 7px;flex-shrink:0}
+.main{min-width:0;padding:24px}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+.page-title{font-size:22px;color:var(--gold);font-weight:700;letter-spacing:.04em;margin-bottom:6px}
+.page-sub{font-size:12px;color:var(--ts);line-height:1.6}
+.admin-page{display:none}
+.admin-page.on{display:block}
+.section{max-width:1180px;margin:0 0 24px}
 .section-title{font-size:11px;color:var(--ts);letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .section-title::after{content:'';flex:1;height:0.5px;background:var(--b)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px}
@@ -68,6 +84,27 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 .prompt-ta:focus{border-color:var(--bs)}
 .prompt-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
 .prompt-msg{font-size:11px;color:var(--ts);min-height:15px}
+.placeholder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.placeholder-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:12px;padding:18px;min-height:120px}
+.placeholder-title{font-size:14px;color:var(--gold);font-weight:600;margin-bottom:8px}
+.placeholder-text{font-size:12px;color:var(--ts);line-height:1.8}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.settings-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:12px;padding:18px}
+.settings-card-title{font-size:14px;color:var(--gold);font-weight:600;margin-bottom:6px}
+.settings-card-sub{font-size:11px;color:var(--ts);line-height:1.7;margin-bottom:14px}
+.secure-note{background:rgba(76,175,118,0.08);border:0.5px solid rgba(76,175,118,0.22);border-radius:10px;padding:12px;color:#7AD4A0;font-size:12px;line-height:1.8;margin-bottom:14px}
+.module-row{display:grid;grid-template-columns:140px 150px minmax(220px,1fr);gap:10px;align-items:center;padding:10px 0;border-bottom:0.5px solid rgba(201,168,76,0.08)}
+.module-row:last-child{border-bottom:none}
+.module-name{font-size:12px;color:var(--tp);font-weight:600}
+.model-hint{font-size:10px;color:var(--td);margin-top:4px}
+@media(max-width:760px){
+  .admin-shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:none;border-bottom:0.5px solid var(--b);display:flex;gap:6px;overflow-x:auto;padding:10px}
+  .side-group-label{display:none}
+  .menu-btn{width:auto;min-width:max-content;margin-bottom:0}
+  .main{padding:16px}
+  .gen-grid,.module-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -93,92 +130,190 @@ tr:hover td{background:rgba(201,168,76,0.03)}
     </div>
   </div>
 
-  <!-- 统计 -->
-  <div class="section">
-    <div class="section-title">总览统计</div>
-    <div class="stats-grid" id="stats-grid">
-      <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">总激活码</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-activated">-</div><div class="stat-lbl">已激活</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-pending">-</div><div class="stat-lbl">未使用</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-unlimited">-</div><div class="stat-lbl">无限次码</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-issued">-</div><div class="stat-lbl">总发放次数</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-used">-</div><div class="stat-lbl">已使用次数</div></div>
-    </div>
-  </div>
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="side-group-label">运营管理</div>
+      <button class="menu-btn on" data-admin-page="overview"><span class="menu-main"><span class="menu-icon">▦</span><span class="menu-text">数据总览</span></span></button>
+      <button class="menu-btn" data-admin-page="codes"><span class="menu-main"><span class="menu-icon">◇</span><span class="menu-text">激活码管理</span></span><span class="menu-count" id="m-codes">0</span></button>
+      <button class="menu-btn" data-admin-page="prompts"><span class="menu-main"><span class="menu-icon">✎</span><span class="menu-text">Prompt 模板</span></span><span class="menu-count" id="m-prompts">0</span></button>
+      <div class="side-group-label">增长闭环</div>
+      <button class="menu-btn" data-admin-page="reports"><span class="menu-main"><span class="menu-icon">▣</span><span class="menu-text">报告管理</span></span><span class="menu-count">规划</span></button>
+      <button class="menu-btn" data-admin-page="orders"><span class="menu-main"><span class="menu-icon">¥</span><span class="menu-text">会员订单</span></span><span class="menu-count">规划</span></button>
+      <button class="menu-btn" data-admin-page="settings"><span class="menu-main"><span class="menu-icon">⚙</span><span class="menu-text">系统设置</span></span></button>
+    </aside>
 
-  <!-- 生成激活码 -->
-  <div class="section">
-    <div class="section-title">生成激活码</div>
-    <div class="gen-card">
-      <div class="gen-grid">
-        <div>
-          <div class="field-lbl">微信昵称（付款人）</div>
-          <input class="input" id="g-wechat" placeholder="如：张三" style="margin:0">
+    <main class="main">
+      <section class="admin-page on" id="admin-page-overview">
+        <div class="page-head">
+          <div>
+            <div class="page-title">数据总览</div>
+            <div class="page-sub">查看激活码发放、激活与使用情况，后续可扩展订单、报告和用户指标。</div>
+          </div>
+          <button class="btn-sm" onclick="setAdminPage('codes')">进入激活码管理</button>
         </div>
-        <div>
-          <div class="field-lbl">套餐类型</div>
-          <select class="select" id="g-credits">
-            <option value="3">体验包 · 3次 (¥6.9)</option>
-            <option value="10" selected>标准包 · 10次 (¥19.9)</option>
-            <option value="30">超值包 · 30次 (¥49.9)</option>
-            <option value="-1">无限次 · 测试专用</option>
-          </select>
+        <div class="section">
+          <div class="section-title">核心指标</div>
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">总激活码</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-activated">-</div><div class="stat-lbl">已激活</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-pending">-</div><div class="stat-lbl">未使用</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-unlimited">-</div><div class="stat-lbl">无限次码</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-issued">-</div><div class="stat-lbl">总发放次数</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-used">-</div><div class="stat-lbl">已使用次数</div></div>
+          </div>
         </div>
-        <div>
-          <div class="field-lbl">备注</div>
-          <input class="input" id="g-note" placeholder="可选备注" style="margin:0">
+        <div class="section">
+          <div class="section-title">待建设模块</div>
+          <div class="placeholder-grid">
+            <div class="placeholder-card"><div class="placeholder-title">用户画像</div><div class="placeholder-text">后续可统计生日资料完善率、问事类型分布、会员状态与复购路径。</div></div>
+            <div class="placeholder-card"><div class="placeholder-title">转化漏斗</div><div class="placeholder-text">后续可追踪免费体验、报告解锁、会员激活、真人咨询的链路数据。</div></div>
+            <div class="placeholder-card"><div class="placeholder-title">服务运营</div><div class="placeholder-text">后续承接老师咨询、报告状态、提醒任务和售后记录。</div></div>
+          </div>
         </div>
-        <div>
-          <button class="btn-primary" style="width:auto;padding:9px 22px" onclick="generateCode()">生 成</button>
-        </div>
-      </div>
-      <div class="msg" id="gen-msg"></div>
-      <div class="new-code-box" id="new-code-box">
-        <div class="new-code" id="new-code-text"></div>
-        <div class="new-code-meta" id="new-code-meta"></div>
-        <div style="text-align:center;margin-top:10px">
-          <button class="btn-sm" onclick="copyNewCode()">复制激活码</button>
-        </div>
-      </div>
-    </div>
-  </div>
+      </section>
 
-  <!-- Prompt 模板 -->
-  <div class="section">
-    <div class="section-title">Prompt 模板配置</div>
-    <div class="prompt-grid" id="prompt-grid">
-      <div class="empty">登录后加载 Prompt 模板</div>
-    </div>
-  </div>
+      <section class="admin-page" id="admin-page-codes">
+        <div class="page-head">
+          <div>
+            <div class="page-title">激活码管理</div>
+            <div class="page-sub">生成付费激活码、查看激活状态和使用次数。原有使用列表保留在本页下方。</div>
+          </div>
+          <button class="btn-sm" onclick="loadData()">刷新数据</button>
+        </div>
+        <div class="section">
+          <div class="section-title">生成激活码</div>
+          <div class="gen-card">
+            <div class="gen-grid">
+              <div>
+                <div class="field-lbl">微信昵称（付款人）</div>
+                <input class="input" id="g-wechat" placeholder="如：张三" style="margin:0">
+              </div>
+              <div>
+                <div class="field-lbl">套餐类型</div>
+                <select class="select" id="g-credits">
+                  <option value="3">体验包 · 3次 (¥6.9)</option>
+                  <option value="10" selected>标准包 · 10次 (¥19.9)</option>
+                  <option value="30">超值包 · 30次 (¥49.9)</option>
+                  <option value="-1">无限次 · 测试专用</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-lbl">备注</div>
+                <input class="input" id="g-note" placeholder="可选备注" style="margin:0">
+              </div>
+              <div>
+                <button class="btn-primary" style="width:auto;padding:9px 22px" onclick="generateCode()">生 成</button>
+              </div>
+            </div>
+            <div class="msg" id="gen-msg"></div>
+            <div class="new-code-box" id="new-code-box">
+              <div class="new-code" id="new-code-text"></div>
+              <div class="new-code-meta" id="new-code-meta"></div>
+              <div style="text-align:center;margin-top:10px">
+                <button class="btn-sm" onclick="copyNewCode()">复制激活码</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">激活码使用列表</div>
+          <div class="filter-row">
+            <button class="filter-btn on" data-filter="all" onclick="setFilter(this)">全部</button>
+            <button class="filter-btn" data-filter="pending" onclick="setFilter(this)">未激活</button>
+            <button class="filter-btn" data-filter="activated" onclick="setFilter(this)">已激活</button>
+            <button class="filter-btn" data-filter="unlimited" onclick="setFilter(this)">无限次</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>激活码</th>
+                  <th>微信昵称</th>
+                  <th>套餐</th>
+                  <th>用量</th>
+                  <th>状态</th>
+                  <th>创建时间</th>
+                  <th>激活时间</th>
+                  <th>备注</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="codes-tbody"></tbody>
+            </table>
+            <div class="empty" id="codes-empty" style="display:none">暂无激活码</div>
+          </div>
+        </div>
+      </section>
 
-  <!-- 激活码列表 -->
-  <div class="section">
-    <div class="section-title">激活码列表</div>
-    <div class="filter-row">
-      <button class="filter-btn on" data-filter="all" onclick="setFilter(this)">全部</button>
-      <button class="filter-btn" data-filter="pending" onclick="setFilter(this)">未激活</button>
-      <button class="filter-btn" data-filter="activated" onclick="setFilter(this)">已激活</button>
-      <button class="filter-btn" data-filter="unlimited" onclick="setFilter(this)">无限次</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>激活码</th>
-            <th>微信昵称</th>
-            <th>套餐</th>
-            <th>用量</th>
-            <th>状态</th>
-            <th>创建时间</th>
-            <th>激活时间</th>
-            <th>备注</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="codes-tbody"></tbody>
-      </table>
-      <div class="empty" id="codes-empty" style="display:none">暂无激活码</div>
-    </div>
+      <section class="admin-page" id="admin-page-prompts">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Prompt 模板</div>
+            <div class="page-sub">集中维护快捷问事、风水、解梦、黄历等模块的模型提示词，支持保存和恢复默认。</div>
+          </div>
+          <button class="btn-sm" onclick="loadPrompts()">刷新模板</button>
+        </div>
+        <div class="section">
+          <div class="section-title">模板配置</div>
+          <div class="prompt-grid" id="prompt-grid">
+            <div class="empty">登录后加载 Prompt 模板</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-page" id="admin-page-reports">
+        <div class="page-head"><div><div class="page-title">报告管理</div><div class="page-sub">规划中的报告资产、生成记录、导出与复购管理。</div></div></div>
+        <div class="placeholder-grid">
+          <div class="placeholder-card"><div class="placeholder-title">报告列表</div><div class="placeholder-text">未来可查看用户生成的命理、财运、风水、解梦和问事报告。</div></div>
+          <div class="placeholder-card"><div class="placeholder-title">报告状态</div><div class="placeholder-text">未来可管理待生成、已完成、已导出、已升级咨询等状态。</div></div>
+        </div>
+      </section>
+
+      <section class="admin-page" id="admin-page-orders">
+        <div class="page-head"><div><div class="page-title">会员订单</div><div class="page-sub">规划中的套餐、会员、订单、退款和咨询服务管理。</div></div></div>
+        <div class="placeholder-grid">
+          <div class="placeholder-card"><div class="placeholder-title">套餐订单</div><div class="placeholder-text">未来可接入支付订单、套餐权益、激活码发放和核销记录。</div></div>
+          <div class="placeholder-card"><div class="placeholder-title">真人咨询</div><div class="placeholder-text">未来可管理咨询老师、预约状态、服务记录和售后处理。</div></div>
+        </div>
+      </section>
+
+      <section class="admin-page" id="admin-page-settings">
+        <div class="page-head">
+          <div>
+            <div class="page-title">系统设置</div>
+            <div class="page-sub">配置模型供应商密钥与各业务模块使用的模型。密钥只保存在后端，不会回显到前端。</div>
+          </div>
+          <button class="btn-sm" onclick="loadModelSettings()">刷新配置</button>
+        </div>
+        <div class="secure-note">
+          安全说明：API Key 提交后仅写入服务器 data/model-settings.json，文件权限限制为 600；后台只显示掩码，不返回明文。生产环境请务必使用 HTTPS，并优先使用服务器环境变量托管密钥。
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <div class="settings-card-title">OpenRouter 密钥</div>
+            <div class="settings-card-sub">用于 Claude、GPT、Gemini、Grok 等 OpenRouter 模型。</div>
+            <div class="field-lbl">当前状态</div>
+            <div class="prompt-meta" id="openrouter-key-state" style="margin-bottom:10px">未加载</div>
+            <input class="input" id="openrouter-key-input" type="password" autocomplete="off" placeholder="粘贴新 OpenRouter API Key；留空则保持不变">
+          </div>
+          <div class="settings-card">
+            <div class="settings-card-title">Groq 密钥</div>
+            <div class="settings-card-sub">用于 Groq 上的 Llama 等高速模型。</div>
+            <div class="field-lbl">当前状态</div>
+            <div class="prompt-meta" id="groq-key-state" style="margin-bottom:10px">未加载</div>
+            <input class="input" id="groq-key-input" type="password" autocomplete="off" placeholder="粘贴新 Groq API Key；留空则保持不变">
+          </div>
+        </div>
+        <div class="section" style="margin-top:20px">
+          <div class="section-title">模块模型路由</div>
+          <div class="settings-card">
+            <div id="module-models"></div>
+            <div class="msg" id="model-settings-msg"></div>
+            <button class="btn-primary" style="width:auto;padding:10px 24px;margin-top:14px" onclick="saveModelSettings()">保存模型配置</button>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
 
@@ -186,8 +321,36 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 var SECRET = '';
 var ALL_CODES = [];
 var ALL_PROMPTS = [];
+var MODEL_SETTINGS = null;
 var CURRENT_FILTER = 'all';
 var NEW_CODE_VAL = '';
+var MODULE_LABELS = {
+  default:'默认模型',
+  quick_ask:'快捷问事',
+  fengshui:'家宅风水',
+  dream:'梦境解析',
+  almanac:'今日黄历',
+  bazi:'命理报告',
+  wealth:'财富运势',
+  followup:'报告追问'
+};
+
+function setAdminPage(page){
+  document.querySelectorAll('.menu-btn').forEach(function(btn){
+    btn.classList.toggle('on', btn.getAttribute('data-admin-page')===page);
+  });
+  document.querySelectorAll('.admin-page').forEach(function(sec){
+    sec.classList.toggle('on', sec.id==='admin-page-'+page);
+  });
+  if(page==='codes')renderTable();
+  if(page==='prompts')loadPrompts();
+  if(page==='settings')loadModelSettings();
+}
+
+document.querySelector('.sidebar').addEventListener('click',function(e){
+  var btn=e.target.closest('.menu-btn');if(!btn)return;
+  setAdminPage(btn.getAttribute('data-admin-page'));
+});
 
 function doLogin(){
   SECRET = document.getElementById('secret-input').value.trim();
@@ -200,6 +363,7 @@ function doLogin(){
       document.getElementById('admin-view').style.display='block';
       renderData(d);
       loadPrompts();
+      loadModelSettings();
     })
     .catch(function(){document.getElementById('login-msg').textContent='连接失败，请确认服务器已启动';});
 }
@@ -209,6 +373,7 @@ function loadData(){
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok)renderData(d);});
   loadPrompts();
+  loadModelSettings();
 }
 
 function renderData(d){
@@ -220,6 +385,8 @@ function renderData(d){
   document.getElementById('s-unlimited').textContent=s.unlimited||0;
   document.getElementById('s-issued').textContent=s.total_credits_issued||0;
   document.getElementById('s-used').textContent=s.total_credits_used||0;
+  var menuCount=document.getElementById('m-codes');
+  if(menuCount)menuCount.textContent=s.total||0;
   document.getElementById('last-refresh').textContent='更新于 '+new Date().toLocaleTimeString('zh');
   renderTable();
 }
@@ -281,11 +448,19 @@ function loadPrompts(){
   if(!SECRET)return;
   fetch('/api/admin/prompts?secret='+encodeURIComponent(SECRET))
     .then(function(r){return r.json();})
-    .then(function(d){if(d.ok){ALL_PROMPTS=d.prompts||[];renderPrompts();}});
+    .then(function(d){
+      if(d.ok){ALL_PROMPTS=d.prompts||[];renderPrompts();return;}
+      document.getElementById('prompt-grid').innerHTML='<div class="empty">Prompt 模板加载失败：'+escHtml(d.message||'请确认后端接口已部署')+'</div>';
+    })
+    .catch(function(){
+      document.getElementById('prompt-grid').innerHTML='<div class="empty">Prompt 模板加载失败：请刷新页面或确认服务版本</div>';
+    });
 }
 
 function renderPrompts(){
   var grid=document.getElementById('prompt-grid');
+  var menuCount=document.getElementById('m-prompts');
+  if(menuCount)menuCount.textContent=ALL_PROMPTS.length||0;
   grid.innerHTML='';
   if(!ALL_PROMPTS.length){grid.innerHTML='<div class="empty">暂无 Prompt 模板</div>';return;}
   ALL_PROMPTS.forEach(function(p){
@@ -331,6 +506,105 @@ function resetPrompt(key){
     msg.style.color=d.ok?'#4CAF76':'#E08080';
     if(d.ok)loadPrompts();
   }).catch(function(){msg.textContent='网络错误';msg.style.color='#E08080';});
+}
+
+function loadModelSettings(){
+  if(!SECRET)return;
+  fetch('/api/admin/model-settings?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok)return;
+      MODEL_SETTINGS=d.settings;
+      renderModelSettings();
+    })
+    .catch(function(){
+      var msg=document.getElementById('model-settings-msg');
+      if(msg){msg.className='msg err';msg.textContent='模型配置加载失败';}
+    });
+}
+
+function providerLabel(p){return p==='groq'?'Groq':'OpenRouter';}
+
+function renderModelSettings(){
+  if(!MODEL_SETTINGS)return;
+  var openState=document.getElementById('openrouter-key-state');
+  var groqState=document.getElementById('groq-key-state');
+  var open=MODEL_SETTINGS.providers.openrouter||{};
+  var groq=MODEL_SETTINGS.providers.groq||{};
+  if(openState)openState.textContent=open.has_key?'已配置：'+open.key_mask:'未配置';
+  if(groqState)groqState.textContent=groq.has_key?'已配置：'+groq.key_mask:'未配置';
+
+  var wrap=document.getElementById('module-models');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  Object.keys(MODULE_LABELS).forEach(function(moduleKey){
+    var cfg=MODEL_SETTINGS.moduleModels[moduleKey]||MODEL_SETTINGS.moduleModels.default||{provider:'openrouter',model:'anthropic/claude-sonnet-4.6'};
+    var row=document.createElement('div');
+    row.className='module-row';
+    var providerId='provider-'+moduleKey;
+    var modelId='model-'+moduleKey;
+    row.innerHTML=
+      '<div><div class="module-name">'+MODULE_LABELS[moduleKey]+'</div><div class="model-hint">'+moduleKey+'</div></div>'+
+      '<select class="select" id="'+providerId+'" data-module-provider="'+moduleKey+'"><option value="openrouter">OpenRouter</option><option value="groq">Groq</option></select>'+
+      '<select class="select" id="'+modelId+'" data-module-model="'+moduleKey+'"></select>';
+    wrap.appendChild(row);
+    document.getElementById(providerId).value=cfg.provider||'openrouter';
+    renderModelSelect(moduleKey, cfg.provider||'openrouter', cfg.model);
+  });
+}
+
+function renderModelSelect(moduleKey, provider, selectedModel){
+  var select=document.getElementById('model-'+moduleKey);
+  if(!select||!MODEL_SETTINGS)return;
+  var opts=(MODEL_SETTINGS.modelOptions||[]).filter(function(m){return m.provider===provider;});
+  select.innerHTML='';
+  opts.forEach(function(m){
+    var opt=document.createElement('option');
+    opt.value=m.model;
+    opt.textContent=m.name+' · '+m.model;
+    select.appendChild(opt);
+  });
+  var custom=document.createElement('option');
+  custom.value=selectedModel&&opts.every(function(m){return m.model!==selectedModel;})?selectedModel:'';
+  custom.textContent=custom.value?('自定义 · '+custom.value):'自定义模型（先选常用项，后续可扩展输入）';
+  select.appendChild(custom);
+  select.value=selectedModel || (opts[0]&&opts[0].model) || '';
+}
+
+document.getElementById('module-models').addEventListener('change',function(e){
+  var providerModule=e.target.getAttribute('data-module-provider');
+  if(providerModule)renderModelSelect(providerModule, e.target.value, null);
+});
+
+function saveModelSettings(){
+  if(!MODEL_SETTINGS)return;
+  var moduleModels={};
+  Object.keys(MODULE_LABELS).forEach(function(moduleKey){
+    var provider=document.getElementById('provider-'+moduleKey).value;
+    var model=document.getElementById('model-'+moduleKey).value;
+    if(model)moduleModels[moduleKey]={provider:provider,model:model};
+  });
+  var payload={
+    secret:SECRET,
+    providers:{
+      openrouter:{apiKey:document.getElementById('openrouter-key-input').value.trim()},
+      groq:{apiKey:document.getElementById('groq-key-input').value.trim()}
+    },
+    moduleModels:moduleModels
+  };
+  var msg=document.getElementById('model-settings-msg');
+  msg.className='msg';msg.textContent='保存中…';
+  fetch('/api/admin/model-settings',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){msg.className='msg err';msg.textContent=d.message||'保存失败';return;}
+    document.getElementById('openrouter-key-input').value='';
+    document.getElementById('groq-key-input').value='';
+    MODEL_SETTINGS=d.settings;
+    renderModelSettings();
+    msg.className='msg ok';msg.textContent='✓ 模型配置已保存';
+  }).catch(function(){msg.className='msg err';msg.textContent='网络错误';});
 }
 
 function copyCode(code){
