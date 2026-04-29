@@ -80,6 +80,10 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 .prompt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
 .prompt-name{font-size:14px;color:var(--gold);font-weight:600;margin-bottom:4px}
 .prompt-meta{font-size:11px;color:var(--ts);line-height:1.6}
+.prompt-guide{margin:10px 0 12px;padding:10px 12px;background:rgba(201,168,76,0.07);border:0.5px solid rgba(201,168,76,0.18);border-radius:8px;font-size:11px;color:var(--ts);line-height:1.7}
+.prompt-guide b{color:var(--gold);font-weight:600}
+.prompt-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.prompt-tag{display:inline-flex;align-items:center;border:0.5px solid rgba(201,168,76,0.22);background:rgba(10,10,15,0.22);border-radius:10px;padding:2px 7px;font-size:10px;color:var(--tp)}
 .prompt-ta{width:100%;min-height:180px;resize:vertical;background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:12px;color:var(--tp);font-size:12px;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;outline:none}
 .prompt-ta:focus{border-color:var(--bs)}
 .prompt-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
@@ -334,6 +338,36 @@ var MODULE_LABELS = {
   wealth:'财富运势',
   followup:'报告追问'
 };
+var PROMPT_GUIDES = {
+  quick_ask_general: {
+    rule: '快捷问事固定只调用此模板。后端会自动补入本次用户问题、问题分类和日期；你只需要维护回答风格与结构。',
+    examples: ['今天适合签合同吗', '面试结果怎么样', '今年财运如何', '这个房子风水好吗']
+  },
+  quick_ask_bazi: {
+    rule: '当前不由快捷问事自动调用。命理类深度内容固定由命理报告、财运分析等专属模块承接。',
+    examples: ['命理报告', '财运分析', '流年大运', '后续可扩展命理问事专题']
+  },
+  fengshui_analysis: {
+    rule: '风水/空间分析固定调用此模板，包含图片识别和文字描述两种模式。',
+    examples: ['户型风水', '卧室/客厅布局', '办公室工位', '财位与形煞']
+  },
+  dream_analysis: {
+    rule: '解梦模块调用此模板；快捷问事里梦境类问题若进入专题解析，也会承接到这里。',
+    examples: ['梦见蛇', '反复做同一个梦', '醒来情绪强烈']
+  },
+  almanac_today: {
+    rule: '黄历模块调用此模板，用于今日宜忌、吉时方位和事项适配。',
+    examples: ['今日宜忌', '吉时', '吉位/吉色', '择日参考']
+  },
+  bazi_report: {
+    rule: '命理报告当前主要由后端多 Agent 硬编码 Prompt 生成，此模板暂作占位说明。',
+    examples: ['四柱命盘', '格局诊断', '流年大运']
+  },
+  wealth_report: {
+    rule: '财运分析当前主要由后端多 Agent 硬编码 Prompt 生成，此模板暂作占位说明。',
+    examples: ['财格分析', '财运周期', '旺财布局']
+  }
+};
 
 function setAdminPage(page){
   document.querySelectorAll('.menu-btn').forEach(function(btn){
@@ -443,6 +477,12 @@ function fmtDate(iso){
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function escAttr(s){return escHtml(s).replace(/"/g,'&quot;');}
+function promptGuideHtml(key){
+  var g=PROMPT_GUIDES[key];
+  if(!g)return '';
+  return '<div class="prompt-guide"><b>实际调用说明：</b>'+escHtml(g.rule)+
+    '<div class="prompt-tags">'+g.examples.map(function(x){return '<span class="prompt-tag">'+escHtml(x)+'</span>';}).join('')+'</div></div>';
+}
 
 function loadPrompts(){
   if(!SECRET)return;
@@ -473,6 +513,7 @@ function renderPrompts(){
         (p.updated_at?'<br>更新于 '+fmtDate(p.updated_at):'')+'</div></div>'+
         '<div style="display:flex;gap:8px"><button class="btn-sm" onclick="savePrompt(\''+escAttr(p.key)+'\')">保存</button><button class="btn-danger" onclick="resetPrompt(\''+escAttr(p.key)+'\')">恢复默认</button></div>'+
       '</div>'+
+      promptGuideHtml(p.key)+
       '<textarea class="prompt-ta" id="prompt-'+escAttr(p.key)+'">'+escHtml(p.content||'')+'</textarea>'+
       '<div class="prompt-actions"><div class="prompt-msg" id="prompt-msg-'+escAttr(p.key)+'"></div></div>';
     grid.appendChild(card);

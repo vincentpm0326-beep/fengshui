@@ -46,7 +46,7 @@ const DEFAULT_PROMPTS = [
     key: 'quick_ask_general',
     name: '快捷问事·通用决策',
     module: '快捷问事',
-    description: '用于不强制依赖生辰八字的问题，如黄历、解梦、风水常识、普通择事。',
+    description: '固定用于快捷问事入口；不自动切换命理 Prompt，命理深度分析由命理/财运专属模块承接。',
     content:
 `你是“国学决策助手”的高级顾问，融合黄历择日、风水环境、梦境象征与现代决策建议。
 请基于用户问题给出稳健、克制、可执行的建议。不要承诺绝对结果，不制造恐慌。
@@ -55,7 +55,7 @@ const DEFAULT_PROMPTS = [
 问题类型：{{category_label}}
 用户问题：{{question}}
 
-如果问题涉及个人长期运势，但用户未提供出生信息，请先给出基础判断，并自然提示“补充出生信息后可结合个人命理进一步分析”。
+如果问题涉及个人长期运势，请先给出通用判断，并自然提示可前往命理报告、财运分析等专属模块做深度分析。
 输出要像“决策建议卡片”，不要像聊天机器人继续追问；不要写“你可以继续告诉我/我可以为你”等无法在当前页面承接的互动话术。
 必须包含：1）明确结论；2）判断依据；3）今天/近期能直接执行的动作；4）适合跳转的下一步服务。
 
@@ -64,9 +64,9 @@ const DEFAULT_PROMPTS = [
   },
   {
     key: 'quick_ask_bazi',
-    name: '快捷问事·命理增强',
-    module: '快捷问事',
-    description: '用于财运、事业、感情、流年/月运等需要结合个人命理的问题。',
+    name: '命理问事·预留模板',
+    module: '运势命理',
+    description: '当前不由快捷问事自动调用；命理深度分析固定走命理报告、财运分析等专属模块。',
     content:
 `你是“国学决策助手”的命理决策顾问，精通八字格局、流年大运、五行喜忌与现实行动建议。
 请基于系统已计算的四柱数据进行分析，不要修改四柱，不要夸大确定性。
@@ -166,7 +166,19 @@ function loadPrompts(){
     if(fs.existsSync(PROMPTS_FILE)) prompts = JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8'));
   }catch(e){ prompts = []; }
   const byKey = new Map(prompts.map(p => [p.key, p]));
-  DEFAULT_PROMPTS.forEach(p => { if(!byKey.has(p.key)) byKey.set(p.key, {...p, updated_at: null}); });
+  DEFAULT_PROMPTS.forEach(p => {
+    if(!byKey.has(p.key)){
+      byKey.set(p.key, {...p, updated_at: null});
+    } else {
+      const saved = byKey.get(p.key);
+      byKey.set(p.key, {
+        ...saved,
+        name: p.name,
+        module: p.module,
+        description: p.description
+      });
+    }
+  });
   return Array.from(byKey.values());
 }
 function savePrompts(prompts){
@@ -703,19 +715,78 @@ function safeExtractJSON(text){
   }catch(e){}
   return null;
 }
+function cleanJsonishText(text){
+  return String(text || '')
+    .replace(/```json\s*/gi,'')
+    .replace(/```\s*/g,'')
+    .trim();
+}
+function pickJsonishField(text, key){
+  const t = cleanJsonishText(text);
+  const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*,\\s*"(category|need_birth|summary|analysis|actions|timing|upgrade_hint|consult_hint)"\\s*:', 'i');
+  const m = t.match(re);
+  if(m) return m[1].replace(/\\"/g,'"').trim();
+  const tail = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*\\}?\\s*$', 'i').exec(t);
+  return tail ? tail[1].replace(/\\"/g,'"').trim() : '';
+}
+function pickJsonishActions(text){
+  const t = cleanJsonishText(text);
+  const m = t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*,\s*"(timing|upgrade_hint|consult_hint)"\s*:/i) ||
+    t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*\}?$/i);
+  if(!m) return [];
+  const actions = [];
+  let item;
+  const re = /"([\s\S]*?)"\s*(?:,|$)/g;
+  while((item = re.exec(m[1]))){
+    const val = item[1].replace(/\\"/g,'"').trim();
+    if(val) actions.push(val);
+  }
+  return actions;
+}
+function tolerantQuickAskObject(text){
+  const t = cleanJsonishText(text);
+  if(!/^\s*\{/.test(t) || t.indexOf('"analysis"') < 0) return null;
+  const parsed = {};
+  ['category','summary','analysis','timing','upgrade_hint','consult_hint'].forEach(k => {
+    const v = pickJsonishField(t, k);
+    if(v) parsed[k] = v;
+  });
+  parsed.need_birth = /"need_birth"\s*:\s*true/i.test(t);
+  parsed.actions = pickJsonishActions(t);
+  return parsed.analysis || parsed.summary || parsed.actions.length ? parsed : null;
+}
+function summaryFromPlainText(text){
+  const lines = cleanJsonishText(text)
+    .split(/\n+/)
+    .map(s => s.replace(/^#+\s*/, '').trim())
+    .filter(Boolean);
+  const finalIdx = lines.findIndex(s => /最终结论|结论|建议/.test(s));
+  if(finalIdx >= 0){
+    const sameLine = lines[finalIdx].replace(/^.*?[：:]/, '').trim();
+    if(sameLine && sameLine.length > 4) return sameLine.slice(0, 60);
+    if(lines[finalIdx + 1]) return lines[finalIdx + 1].slice(0, 60);
+  }
+  const first = lines.find(s => !/^(一|二|三|四|五|六|七|八|九|十)[、.．]/.test(s) && !/^[-*]\s*$/.test(s));
+  return first ? first.slice(0, 60) : '';
+}
 function normalizeQuickAskResult(data, rawText){
-  let d = data || safeExtractJSON(rawText) || {};
-  if(typeof d === 'string') d = safeExtractJSON(d) || { analysis:d };
+  let d = data || safeExtractJSON(rawText) || tolerantQuickAskObject(rawText) || {};
+  if(typeof d === 'string') d = safeExtractJSON(d) || tolerantQuickAskObject(d) || { analysis:d };
   ['summary','analysis','upgrade_hint','consult_hint','timing'].forEach(k => {
     if(typeof d[k] === 'string'){
-      const nested = safeExtractJSON(d[k]);
-      if(nested && (nested.analysis || nested.summary)) d = {...nested, ...d, [k]: nested[k] || d[k]};
+      const nested = safeExtractJSON(d[k]) || tolerantQuickAskObject(d[k]);
+      if(nested && (nested.analysis || nested.summary)) d = {...d, ...nested};
     }
   });
-  if(!d.summary) d.summary = '已完成问事判断';
+  if(!d.summary) d.summary = summaryFromPlainText(d.analysis || rawText) || '已完成问事判断';
   if(!d.analysis) d.analysis = String(rawText || '').replace(/```json|```/g,'').slice(0, 1200);
   if(typeof d.analysis === 'object') d.analysis = JSON.stringify(d.analysis);
   if(!Array.isArray(d.actions)) d.actions = d.actions ? [String(d.actions)] : [];
+  d.analysis = cleanJsonishText(d.analysis);
+  if(/^\s*\{/.test(d.analysis) && d.analysis.indexOf('"analysis"') >= 0){
+    const nested = tolerantQuickAskObject(d.analysis);
+    if(nested) d = {...d, ...nested};
+  }
   return d;
 }
 
@@ -754,40 +825,94 @@ function hasModelKey(config){
 }
 
 function buildQuickAskFallback(question, cls, hasBirth){
-  const reason = {
-    timing: '这类问题主要看事项性质、当天宜忌、合同风险和执行时段。',
-    dream: '梦境类问题更适合从醒后情绪、重复意象和现实压力源来判断。',
-    fengshui: '空间类问题需要先看门窗、动线、床桌沙发位置、采光和朝向。',
-    wealth: '财运问题不能只看“旺不旺”，要拆成收入结构、破财点和近期节奏。',
-    career: '事业问题要同时看现实筹码、合作关系、现金流和行动窗口。',
-    relationship: '感情问题应先区分关系阶段，再看沟通稳定性和实际行动。',
-    fortune: '运势问题要拆成事业、财务、感情、健康和环境，不宜泛泛归因。',
-    compatibility: '合盘匹配需要双方出生信息，否则只能做关系风险与沟通建议。',
-    general: '综合问题需要先明确时间、对象、事项、风险和你想得到的结果。'
+  const q = String(question || '');
+  const isInterview = /面试|offer|录取|hr|HR|复试|终面/.test(q);
+  const direct = {
+    timing: {
+      summary: '可以推进，但先把风险点核清。',
+      analysis: '这类事情更看“事项是否可逆、责任是否明确、时间是否紧迫”。如果是签约、付款、开业、沟通等具体事项，建议先小步推进，关键条款和承诺不要口头化；如果成本较高或后果不可逆，宁可多留一次确认窗口。'
+    },
+    dream: {
+      summary: '先看情绪信号，不宜直接当预兆。',
+      analysis: '梦境更适合作为近期压力、关系牵挂或潜意识提醒来看。重点不是梦到什么就一定发生什么，而是醒来后的情绪强度、梦境是否反复、现实中是否有对应压力源。今天不建议因梦境直接做重大决定。'
+    },
+    fengshui: {
+      summary: '先看动线、采光和关键位置。',
+      analysis: '空间问题最先看门窗动线、床/桌/沙发位置、采光通风和镜子横梁等高频风险。只凭一句描述很难判断全局，但如果已经感觉压抑、杂乱或动线冲突，可以先从清理入口、稳定主位、减少对冲开始。'
+    },
+    wealth: {
+      summary: '先控风险，再看增收机会。',
+      analysis: '财运问题不要只问旺不旺，先拆成收入来源、支出漏洞、合作风险和短期现金流。近期适合先做复盘和收口，不宜因为焦虑贸然加杠杆或追高投入；真正要看周期，可进入财运分析做专属承接。'
+    },
+    career: {
+      summary: isInterview ? '有机会，但别只等结果。' : '先稳住节奏，再推进关键动作。',
+      analysis: isInterview
+        ? '昨天的面试是否有好结果，核心看三点：你的岗位匹配度、面试官当场反馈、以及后续沟通是否顺畅。现在不建议反复猜结果，最有效的是在24到48小时内发一条简短感谢或补充信息，表达兴趣、强化匹配点，同时继续推进备选机会。若3到5个工作日没有反馈，再做一次礼貌跟进。'
+        : '事业决策先看岗位匹配、资源筹码、合作关系和行动窗口。现在适合把目标拆清楚：是争取机会、换环境、谈条件，还是降低风险。不要只凭情绪判断去留，先拿到更多确定信息，再决定是否加速推进。'
+    },
+    relationship: {
+      summary: '先看行动稳定性，不急着定性。',
+      analysis: '感情问题最容易被情绪放大。当前先看对方是否持续投入、沟通是否稳定、冲突是否能被修复，而不是只看一两句话或一次态度。短期适合降低试探，做一次清晰但不过度施压的沟通。'
+    },
+    fortune: {
+      summary: '先拆问题来源，再决定怎么动。',
+      analysis: '“不顺”通常不是单一原因，先拆成事业、财务、关系、健康和环境五类。最近适合先处理反复拖延、反复出错、反复消耗你的环节；重大决定不要同时开太多线，先收敛再推进。'
+    },
+    compatibility: {
+      summary: '先看现实匹配，再谈深层适配。',
+      analysis: '关系匹配不能只看感觉，要看价值观、金钱观、家庭边界、冲突处理和长期目标是否一致。当前适合观察对方在压力场景下的行动，而不是只听承诺。需要更深判断时，再进入合盘或真人咨询承接。'
+    },
+    general: {
+      summary: '先把目标和风险说清楚。',
+      analysis: '这件事要先明确：你想得到什么结果、最担心什么、是否有时间压力、失败成本高不高。能马上验证的信息先用现实依据判断，不能验证的部分再作为辅助参考。现在适合先做小步试探，不宜一次性押上全部筹码。'
+    }
   };
   const commonActions = {
-    timing: ['先确认事项是否必须今天完成，非刚需可优先选择上午沟通。', '签约、付款、开业类事项建议避开情绪波动时段，先复核关键条款。', '如金额较大，可补充出生信息后做个人择时增强分析。'],
+    timing: ['先确认事项是否必须今天完成，非刚需可优先选择上午沟通。', '签约、付款、开业类事项建议避开情绪波动时段，先复核关键条款。', '如金额较大，可进入黄历或命理报告做专属分析。'],
     dream: ['记录梦中最强烈的意象和醒来情绪，先判断它对应压力、关系还是财务主题。', '今天避免因梦境直接做重大决定，先观察现实中是否有相同信号。', '如果同类梦反复出现，可继续做梦境深度解析。'],
     fengshui: ['先补充户型、朝向、门窗、床/桌/沙发位置，判断会更准确。', '优先检查门窗对冲、床头无靠、镜子对床、横梁压顶这些高频问题。', '涉及买房、装修、办公位调整时，建议上传图片做完整风水诊断。'],
-    wealth: ['先区分这是短期求财、长期收入，还是破财风险问题。', '近期不要只看单一机会，先复盘收入来源、支出漏洞和合作风险。', '财运类问题建议补充出生信息，结合财星、流年、大运分析。'],
-    career: ['先明确当前是跳槽、升职、创业还是合作选择，不同问题判断标准不同。', '短期先看现实筹码：资源、现金流、贵人支持和风险承受力。', '事业类问题建议补充出生信息，结合命理趋势做增强判断。'],
-    relationship: ['先区分关系处在暧昧、磨合、冲突还是决策阶段。', '今天不建议只凭情绪做结论，先看对方行动是否稳定。', '感情婚恋类问题补充出生信息后，可进一步看关系节奏与适配度。'],
+    wealth: ['先区分这是短期求财、长期收入，还是破财风险问题。', '近期不要只看单一机会，先复盘收入来源、支出漏洞和合作风险。', '需要结合财星、流年、大运时，进入深度财运分析模块。'],
+    career: ['先明确当前是跳槽、升职、创业还是合作选择，不同问题判断标准不同。', '短期先看现实筹码：资源、现金流、贵人支持和风险承受力。', '需要结合命盘趋势时，进入命理报告模块做专属分析。'],
+    relationship: ['先区分关系处在暧昧、磨合、冲突还是决策阶段。', '今天不建议只凭情绪做结论，先看对方行动是否稳定。', '需要看关系节奏与适配度时，进入命理报告或真人咨询承接。'],
     fortune: ['先把“不顺”拆成事业、财务、感情、健康或家宅环境，避免泛泛判断。', '短期先减少高风险决策，优先处理拖延事项和反复出错的环节。', '运势趋势类问题需要出生信息，结合流年/月运判断会更有价值。'],
     compatibility: ['合盘类问题需要双方出生信息，单靠一句描述只能做关系沟通建议。', '先观察价值观、金钱观、家庭边界和冲突处理方式。', '建议补充双方生日后做合盘或真人咨询。'],
-    general: ['先把问题具体化为时间、对象、事项和你担心的结果。', '能马上验证的信息先用现实依据判断，玄学分析适合做辅助决策。', '如果问题牵涉长期运势，可补充出生信息做增强分析。']
+    general: ['先把问题具体化为时间、对象、事项和你担心的结果。', '能马上验证的信息先用现实依据判断，国学分析适合做辅助决策。', '如果问题牵涉长期运势，可进入命理报告做深度分析。']
   };
-  const actions = commonActions[cls.category] || commonActions.general;
+  const actions = isInterview ? [
+    '24到48小时内发一条简短感谢信息，重点补一句你和岗位匹配的能力或经验。',
+    '不要只等这一家结果，同步推进1到2个备选机会，避免等待期心态失衡。',
+    '如果3到5个工作日没有反馈，再礼貌跟进一次；不要连续催问或过早谈条件。'
+  ] : (commonActions[cls.category] || commonActions.general);
+  const base = direct[cls.category] || direct.general;
   return {
     category: cls.category,
-    need_birth: cls.birth === 'required' && !hasBirth,
-    summary: hasBirth ? '先稳住节奏，再看行动窗口。' : '先做基础判断，重大事再增强。',
-    analysis: `你的问题属于“${cls.label}”。${reason[cls.category] || reason.general}当前可先按现实决策处理：确认这件事是否紧急、成本是否高、是否可逆、是否需要他人配合。${hasBirth ? '已补充出生信息时，后续可进一步结合命盘、流年与喜忌做个人化判断。' : '如果要判断长期运势、财运、事业或感情走势，需要补充出生日期、时辰和性别。'}本次问题：“${question}”。`,
+    need_birth: false,
+    summary: base.summary,
+    analysis: base.analysis,
     actions,
     timing: cls.category === 'timing' ? '普通择事可先看今日宜忌；重大事项建议进一步做个人择日。' : '',
-    upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '补充出生信息后，可解锁命理增强分析或专题报告。',
-    consult_hint: '涉及买房、投资、婚姻、开业等高成本决策时，建议真人咨询。',
+    upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '可进入命理报告、财运分析或真人咨询做专属承接。',
+    consult_hint: cls.category === 'career' ? '若涉及异地、薪资大幅变化或是否离职，可进一步真人咨询。' : '涉及买房、投资、婚姻、开业等高成本决策时，建议真人咨询。',
     fallback: true
   };
+}
+
+function buildQuickAskRuntimeContext(question, cls){
+  return `【本次用户问题】
+${question}
+
+【系统识别的问题类型】
+${cls.label}（${cls.category}）
+
+【当前日期】
+${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+
+【本次输出要求】
+1. 必须直接回答“本次用户问题”，不要泛泛复述模板。
+2. 不要写旁白、开场白、角色自述、分析计划，例如“下面我将”“作为顾问”“我会从几个方面”。
+3. 如果后台 Prompt 规定了固定结构，请严格按该结构输出最终内容。
+4. 快捷问事固定使用通用问事逻辑，不在这里展开八字命理；如需命理深度分析，只在结果中自然引导去命理报告/财运分析等专属模块。
+5. 不要输出与用户问题无关的说明。`;
 }
 
 // ═══ 通用聊天接口（解梦、黄历、风水、追问） ═══
@@ -820,35 +945,24 @@ app.post('/api/chat', requireToken, async(req,res)=>{
   } catch(e) { res.status(500).json({ error: { message: '分析服务暂时不可用，请稍后重试' } }); }
 });
 
-// ═══ 快捷问事：先分类，再按资料完整度调用对应 Prompt ═══
+// ═══ 快捷问事：固定调用通用 Prompt，分类只用于展示标签和下一步推荐 ═══
 app.post('/api/quick-ask', requireToken, async(req,res)=>{
   try{
     const question = String(req.body.question || '').trim().slice(0, 500);
     if(!question) return res.status(400).json({ error: { message: '请先输入要问的事情' } });
 
     const cls = classifyQuestion(question);
-    const birthInfo = buildBaziContext(req.body.birth || null);
-    if(cls.birth === 'required' && !birthInfo){
-      return res.json({
-        ok: true,
-        needs_birth: true,
-        category: cls.category,
-        category_label: cls.label,
-        message: '这个问题需要结合个人命理判断，请先补充出生日期、时辰和性别。'
-      });
-    }
-
-    const useBazi = !!birthInfo && cls.birth !== 'none';
-    const promptTpl = getPrompt(useBazi ? 'quick_ask_bazi' : 'quick_ask_general');
+    const promptTpl = getPrompt('quick_ask_general');
     const vars = {
       current_date: new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }),
       question,
       category: cls.category,
       category_label: cls.label,
-      birth_context: birthInfo?.birthContext || '',
-      bazi_context: birthInfo?.baziContext || ''
+      birth_context: '',
+      bazi_context: ''
     };
     const prompt = renderTemplate(promptTpl?.content, vars);
+    const runtimeContext = buildQuickAskRuntimeContext(question, cls);
     let model = modelConfigFor('quick_ask', req.body.allow_model_override ? req.body.selected_model : null);
     if(!hasModelKey(model) && hasModelKey({provider:'groq',model:'llama-3.3-70b-versatile'})) model = {provider:'groq',model:'llama-3.3-70b-versatile'};
     if(!hasModelKey(model)){
@@ -857,11 +971,14 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
         needs_birth:false,
         category:cls.category,
         category_label:cls.label,
-        data:buildQuickAskFallback(question, cls, !!birthInfo),
+        data:buildQuickAskFallback(question, cls, false),
         warning:'模型 API Key 未配置，已返回本地基础版结果。'
       });
     }
-    const text = await callLLM([{ role:'user', content: prompt }], 2500, model);
+    const text = await callLLM([
+      { role:'system', content: prompt },
+      { role:'user', content: runtimeContext }
+    ], 2500, model);
     const data = normalizeQuickAskResult(null, text);
     res.json({ ok:true, needs_birth:false, category:cls.category, category_label:cls.label, data });
   }catch(e){

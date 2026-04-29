@@ -695,7 +695,7 @@ function reportUsage(){
 }
 
 // ═══════════════════════════════════════════
-// 快捷问事：按问题类型判断是否需要八字
+// 快捷问事：只做分类展示和下一步推荐，不切换 Prompt
 // ═══════════════════════════════════════════
 function classifyQuickQuestion(q){
   q=String(q||'').toLowerCase();
@@ -747,7 +747,7 @@ function getQuickBirth(){
 
 function normalizeAskText(v){
   if(v == null) return '';
-  if(typeof v === 'object') return JSON.stringify(v);
+  if(typeof v === 'object') return v.analysis||v.summary||JSON.stringify(v);
   var s=String(v).trim();
   try{
     var parsed=JSON.parse(s.replace(/```json|```/g,'').trim());
@@ -755,7 +755,64 @@ function normalizeAskText(v){
       return parsed.analysis||parsed.summary||JSON.stringify(parsed);
     }
   }catch(e){}
+  var obj=parseLooseQuickAskJson(s);
+  if(obj) return obj.analysis||obj.summary||'';
   return s.replace(/```json|```/g,'').trim();
+}
+
+function cleanJsonishText(s){
+  return String(s||'').replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+}
+
+function pickJsonishField(text,key){
+  var t=cleanJsonishText(text);
+  var re=new RegExp('"'+key+'"\\s*:\\s*"([\\s\\S]*?)"\\s*,\\s*"(category|need_birth|summary|analysis|actions|timing|upgrade_hint|consult_hint)"\\s*:','i');
+  var m=t.match(re);
+  if(m)return m[1].replace(/\\"/g,'"').trim();
+  var tail=new RegExp('"'+key+'"\\s*:\\s*"([\\s\\S]*?)"\\s*\\}?\\s*$','i').exec(t);
+  return tail?tail[1].replace(/\\"/g,'"').trim():'';
+}
+
+function pickJsonishActions(text){
+  var t=cleanJsonishText(text);
+  var m=t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*,\s*"(timing|upgrade_hint|consult_hint)"\s*:/i)||t.match(/"actions"\s*:\s*\[([\s\S]*?)\]\s*\}?$/i);
+  if(!m)return [];
+  var out=[], re=/"([\s\S]*?)"\s*(?:,|$)/g, item;
+  while((item=re.exec(m[1]))){
+    var val=item[1].replace(/\\"/g,'"').trim();
+    if(val)out.push(val);
+  }
+  return out;
+}
+
+function parseLooseQuickAskJson(text){
+  var t=cleanJsonishText(text);
+  if(!/^\s*\{/.test(t)||t.indexOf('"analysis"')<0)return null;
+  var obj={};
+  ['category','summary','analysis','timing','upgrade_hint','consult_hint'].forEach(function(k){
+    var v=pickJsonishField(t,k); if(v)obj[k]=v;
+  });
+  obj.need_birth=/"need_birth"\s*:\s*true/i.test(t);
+  obj.actions=pickJsonishActions(t);
+  return obj.analysis||obj.summary||obj.actions.length?obj:null;
+}
+
+function normalizeQuickAskData(d){
+  if(typeof d==='string')d=parseLooseQuickAskJson(d)||{analysis:d};
+  d=d||{};
+  ['summary','analysis','upgrade_hint','consult_hint','timing'].forEach(function(k){
+    if(typeof d[k]==='string'){
+      var nested=parseLooseQuickAskJson(d[k]);
+      if(nested)d=Object.assign({},d,nested);
+    }
+  });
+  if(typeof d.analysis==='string'){
+    d.analysis=cleanJsonishText(d.analysis);
+    var nested2=parseLooseQuickAskJson(d.analysis);
+    if(nested2)d=Object.assign({},d,nested2);
+  }
+  if(!Array.isArray(d.actions))d.actions=d.actions?[String(d.actions)]:[];
+  return d;
 }
 
 function renderQuickAskCtas(category){
@@ -790,12 +847,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
   var cls=classifyQuickQuestion(q);
   var birth=getQuickBirth();
   var panel=document.getElementById('ask-birth-panel');
-  if(cls.birth==='required'&&!birth){
-    panel.classList.add('show');
-    err('ask-err','这个问题需要结合个人命理判断，请先补充出生日期。');
-    return;
-  }
-  if(cls.birth==='optional'&&!birth) panel.classList.remove('show');
+  if(panel) panel.classList.remove('show');
   if(!checkProAccess())return;
 
   noerr('ask-err');
@@ -806,13 +858,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     body:JSON.stringify({question:q,birth:birth})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
-    if(j.needs_birth){
-      refundProAccess();
-      panel.classList.add('show');
-      err('ask-err',j.message||'请补充出生信息后再问');
-      return;
-    }
-    var d=j.data||{};
+    var d=normalizeQuickAskData(j.data||{});
     document.getElementById('ask-category').textContent=j.category_label||cls.label;
     document.getElementById('ask-summary').textContent=normalizeAskText(d.summary)||'已完成基础判断';
     document.getElementById('ask-analysis').textContent=normalizeAskText(d.analysis);
@@ -829,7 +875,6 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     document.getElementById('ask-result').classList.add('show');
     if(j.warning&&d.fallback){
       refundProAccess();
-      document.getElementById('ask-upgrade').textContent=(d.upgrade_hint||'')+' 当前为本地基础版；配置模型 API Key 后可启用深度 AI 分析。';
     } else {
       reportUsage();
     }
