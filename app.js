@@ -327,6 +327,20 @@ function callAPI(content, tokens, ok, fail, images) {
   .catch(function(){ fail('代理连接失败，请确认 proxy.js 已启动'); });
 }
 
+function renderPromptFromBackend(key, vars, fallback, ok) {
+  fetch('/api/prompt/render', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CMA-Token': window.__CMA_T||''},
+    body: JSON.stringify({key:key, vars:vars||{}})
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d&&d.ok&&d.prompt) ok(d.prompt);
+    else ok(typeof fallback==='function'?fallback():fallback);
+  })
+  .catch(function(){ ok(typeof fallback==='function'?fallback():fallback); });
+}
+
 function animProg(fId,pId,lId,steps,ms){
   var i=0,iv=setInterval(function(){
     if(i>=steps.length){clearInterval(iv);return;}
@@ -364,9 +378,10 @@ function saveHistory(type, title, score, data) {
   try {
     var history = JSON.parse(localStorage.getItem('fengshui_history') || '[]');
     history.unshift({type:type, title:title, score:score, data:data, time:new Date().toLocaleString('zh')});
-    if(history.length > 10) history = history.slice(0, 10);
+    if(history.length > 30) history = history.slice(0, 30);
     localStorage.setItem('fengshui_history', JSON.stringify(history));
     renderHistory();
+    renderReportCenter();
   } catch(e){}
 }
 
@@ -389,8 +404,73 @@ function renderHistory() {
   } catch(e){}
 }
 
+function summarizeReportData(data){
+  if(!data)return '暂无摘要';
+  if(typeof data==='string')return data.substring(0,260);
+  if(data.result){
+    return (data.result.summary||'') + (data.result.analysis?'\n'+data.result.analysis:'');
+  }
+  return data.master_comment || data.summary || data.day_summary || data.prediction ||
+    data.caige_detail || data.character || data.analysis || '已保存完整结构化报告，可继续查看或生成同类深度分析。';
+}
+
+function reportTargetByType(type){
+  if(type.indexOf('财运')>=0)return 'wealth';
+  if(type.indexOf('命理')>=0)return 'profile';
+  if(type.indexOf('风水')>=0)return 'analyzer';
+  if(type.indexOf('解梦')>=0)return 'dream';
+  if(type.indexOf('黄历')>=0)return 'almanac';
+  return 'ask';
+}
+
+function renderReportCenter(){
+  try{
+    var list=document.getElementById('report-center-list');
+    if(!list)return;
+    var history=JSON.parse(localStorage.getItem('fengshui_history')||'[]');
+    list.innerHTML='';
+    if(!history.length){
+      list.innerHTML='<div class="report-empty">还没有生成报告。可以先从快捷问事、命理报告、家宅风水或财运分析开始。</div>';
+      return;
+    }
+    history.forEach(function(h,idx){
+      var item=document.createElement('div');
+      item.className='report-center-item';
+      var summary=summarizeReportData(h.data).substring(0,320);
+      item.innerHTML=
+        '<div class="report-center-head"><div><div class="report-center-title"></div><div class="report-center-meta"></div></div>'+
+        (h.score?'<div class="report-center-score"></div>':'')+'</div>'+
+        '<div class="report-center-summary"></div>'+
+        '<div class="report-center-actions"><button class="btn-ghost" data-open-report="'+idx+'">查看详情</button><button class="btn-ghost" data-repeat="'+reportTargetByType(h.type)+'">继续分析</button></div>';
+      item.querySelector('.report-center-title').textContent=h.title||'未命名报告';
+      item.querySelector('.report-center-meta').textContent=(h.type||'报告')+' · '+(h.time||'');
+      item.querySelector('.report-center-summary').textContent=summary;
+      var scoreEl=item.querySelector('.report-center-score');
+      if(scoreEl)scoreEl.textContent=h.score;
+      list.appendChild(item);
+    });
+  }catch(e){}
+}
+
 document.getElementById('clear-history-btn').addEventListener('click',function(){
-  localStorage.removeItem('fengshui_history'); renderHistory();
+  localStorage.removeItem('fengshui_history'); renderHistory(); renderReportCenter();
+});
+document.getElementById('refresh-reports-btn').addEventListener('click',renderReportCenter);
+document.getElementById('clear-reports-btn').addEventListener('click',function(){
+  if(!confirm('确定清空所有本地报告记录？'))return;
+  localStorage.removeItem('fengshui_history'); renderHistory(); renderReportCenter();
+});
+document.getElementById('report-center-list').addEventListener('click',function(e){
+  var detail=e.target.closest('[data-open-report]');
+  var repeat=e.target.closest('[data-repeat]');
+  if(repeat){goTo(repeat.getAttribute('data-repeat'));return;}
+  if(!detail)return;
+  var idx=parseInt(detail.getAttribute('data-open-report'));
+  try{
+    var history=JSON.parse(localStorage.getItem('fengshui_history')||'[]');
+    var h=history[idx]; if(!h)return;
+    alert((h.title||'报告详情')+'\n\n'+summarizeReportData(h.data).substring(0,900));
+  }catch(err){}
 });
 
 // ═══════════════════════════════════════════
@@ -401,6 +481,7 @@ function goTo(p){
   document.querySelector('[data-p="'+p+'"]').classList.add('on');
   document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on');});
   document.getElementById('page-'+p).classList.add('on');
+  if(p==='reports')renderReportCenter();
   window.scrollTo(0,0);
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(b)goTo(b.getAttribute('data-p'));});
@@ -414,6 +495,138 @@ function reportUsage(){
   if(!ACTIVE_CODE) return;
   fetch('/api/use-credit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:ACTIVE_CODE})}).catch(function(){});
 }
+
+// ═══════════════════════════════════════════
+// 快捷问事：按问题类型判断是否需要八字
+// ═══════════════════════════════════════════
+function classifyQuickQuestion(q){
+  q=String(q||'').toLowerCase();
+  function has(arr){return arr.some(function(w){return q.indexOf(w)>=0;});}
+  if(has(['合盘','合婚','配不配','适不适合在一起','复合'])) return {category:'compatibility',label:'合盘/关系匹配',birth:'required'};
+  if(has(['流年','今年','明年','未来','三个月','半年','月运','运势','转运','不顺','低谷'])) return {category:'fortune',label:'运势趋势',birth:'required'};
+  if(has(['财运','求财','赚钱','投资','破财','副业','涨薪','收入'])) return {category:'wealth',label:'财富运势',birth:'required'};
+  if(has(['事业','工作','跳槽','创业','面试','升职','合作'])) return {category:'career',label:'事业决策',birth:'required'};
+  if(has(['感情','婚姻','恋爱','桃花','结婚','离婚','对象'])) return {category:'relationship',label:'感情婚恋',birth:'required'};
+  if(has(['签约','合同','开业','搬家','入宅','领证','提车','装修','动土','表白','见客户','今天','明天','日期','吉日','吉时'])) return {category:'timing',label:'今日/择日决策',birth:'optional'};
+  if(has(['梦到','做梦','梦见','梦里'])) return {category:'dream',label:'梦境解析',birth:'none'};
+  if(has(['户型','房子','住宅','卧室','客厅','厨房','办公桌','镜子','床头','财位','朝向','风水'])) return {category:'fengshui',label:'家宅风水',birth:'none'};
+  return {category:'general',label:'综合问事',birth:'optional'};
+}
+
+function fillQuickBirthFromStorage(){
+  try{
+    var p=JSON.parse(localStorage.getItem('cma_birth_profile')||'null');
+    if(!p)return;
+    if(p.date)document.getElementById('ask-bday').value=p.date;
+    if(p.hour!==null&&p.hour!==undefined)document.getElementById('ask-bhour').value=String(p.hour);
+    if(p.gender)document.getElementById('ask-gender').value=p.gender.indexOf('女')>=0?'女':'男';
+  }catch(e){}
+}
+fillQuickBirthFromStorage();
+
+document.getElementById('ask-samples').addEventListener('click',function(e){
+  var s=e.target.closest('.ask-sample');if(!s)return;
+  document.getElementById('ask-question').value=s.textContent;
+  document.getElementById('ask-question').focus();
+});
+
+function getQuickBirth(){
+  var date=document.getElementById('ask-bday').value;
+  if(!date)return null;
+  var sel=document.getElementById('ask-bhour');
+  return {
+    date:date,
+    hour:sel.value===''?null:parseInt(sel.value),
+    timeLabel:sel.options[sel.selectedIndex].text,
+    gender:document.getElementById('ask-gender').value,
+    birthplace:document.getElementById('ask-birthplace').value.trim()
+  };
+}
+
+function renderQuickAskCtas(category){
+  var row=document.getElementById('ask-cta-row');
+  if(!row)return;
+  row.innerHTML='';
+  var ctas=[];
+  if(['wealth','fortune','career','relationship','compatibility'].indexOf(category)>=0){
+    ctas.push({label:'生成命理报告',target:'profile'});
+  }
+  if(category==='wealth')ctas.push({label:'深度财运分析',target:'wealth'});
+  if(category==='fengshui')ctas.push({label:'上传户型做风水诊断',target:'analyzer'});
+  if(category==='dream')ctas.push({label:'继续梦境解析',target:'dream'});
+  if(category==='timing'||category==='general')ctas.push({label:'查看今日黄历',target:'almanac'});
+  ctas.push({label:'查看报告中心',target:'reports'});
+  ctas.push({label:'开通/激活次数',action:'paywall'});
+  ctas.forEach(function(c){
+    var btn=document.createElement('button');
+    btn.className='ask-cta';
+    btn.textContent=c.label;
+    btn.addEventListener('click',function(){
+      if(c.action==='paywall')showPaywall();
+      else goTo(c.target);
+    });
+    row.appendChild(btn);
+  });
+}
+
+document.getElementById('ask-btn').addEventListener('click',function(){
+  var q=document.getElementById('ask-question').value.trim();
+  if(!q){err('ask-err','请先输入你想问的事情');return;}
+  var cls=classifyQuickQuestion(q);
+  var birth=getQuickBirth();
+  var panel=document.getElementById('ask-birth-panel');
+  if(cls.birth==='required'&&!birth){
+    panel.classList.add('show');
+    err('ask-err','这个问题需要结合个人命理判断，请先补充出生日期。');
+    return;
+  }
+  if(cls.birth==='optional'&&!birth) panel.classList.remove('show');
+  if(!checkProAccess())return;
+
+  noerr('ask-err');
+  document.getElementById('ask-result').classList.remove('show');
+  document.getElementById('ask-loading').classList.add('on');
+  document.getElementById('ask-btn').disabled=true;
+  fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
+    body:JSON.stringify({question:q,birth:birth,selected_model:SELECTED_MODEL})
+  }).then(function(r){return r.json();}).then(function(j){
+    if(j.error)throw new Error(j.error.message||'快捷问事失败');
+    if(j.needs_birth){
+      refundProAccess();
+      panel.classList.add('show');
+      err('ask-err',j.message||'请补充出生信息后再问');
+      return;
+    }
+    var d=j.data||{};
+    document.getElementById('ask-category').textContent=j.category_label||cls.label;
+    document.getElementById('ask-summary').textContent=d.summary||'已完成基础判断';
+    document.getElementById('ask-analysis').textContent=d.analysis||'';
+    var actions=document.getElementById('ask-actions');actions.innerHTML='';
+    arrify(d.actions).forEach(function(a){
+      var div=document.createElement('div');
+      div.className='ask-action';
+      div.textContent=a;
+      actions.appendChild(div);
+    });
+    document.getElementById('ask-upgrade').textContent=d.upgrade_hint||d.timing||'可继续生成深度报告或开启提醒。';
+    document.getElementById('ask-consult').textContent=d.consult_hint||'涉及买房、投资、婚姻、开业等高成本决策时，建议进一步真人咨询。';
+    renderQuickAskCtas(j.category||cls.category);
+    document.getElementById('ask-result').classList.add('show');
+    if(j.warning&&d.fallback){
+      refundProAccess();
+      document.getElementById('ask-upgrade').textContent=(d.upgrade_hint||'')+' 当前为本地基础版；配置模型 API Key 后可启用深度 AI 分析。';
+    } else {
+      reportUsage();
+    }
+    saveHistory('快捷问事', q.substring(0,20), '', {question:q,result:d,category:j.category_label||cls.label});
+  }).catch(function(e){
+    refundProAccess();
+    err('ask-err',e.message||'快捷问事连接失败，请确认代理已启动');
+  }).finally(function(){
+    document.getElementById('ask-loading').classList.remove('on');
+    document.getElementById('ask-btn').disabled=false;
+  });
+});
 
 // ═══════════════════════════════════════════
 // 空间分析
@@ -569,16 +782,6 @@ document.getElementById('generate-btn').addEventListener('click',function(){
   // 确定分析指令
   var advOpen=document.getElementById('adv-panel').classList.contains('show');
   var customPrompt=advOpen?document.getElementById('prompt-ta').value.trim():'';
-  var prompt;
-  if(customPrompt){
-    prompt=customPrompt;
-  } else if(isTextMode){
-    var desc2=document.getElementById('room-desc').value.trim();
-    prompt=P.fengshui(room,focus,desc2);
-  } else {
-    prompt=P.fengshuiVision(room,focus,SELECTED_DOOR_DIR);
-  }
-
   var images=isTextMode?[]:UPLOAD_IMAGES.filter(Boolean);
 
   noerr('az-err');
@@ -589,28 +792,44 @@ document.getElementById('generate-btn').addEventListener('click',function(){
     [{pct:15,lbl:'AI 识别图像格局...'},{pct:45,lbl:'推算五行能量分布...'},{pct:80,lbl:'生成深度风水报告...'}];
   var iv=animProg('p2fill','p2pct','p2lbl',progLabels,900);
 
-  callAPI(prompt,4000,
-    function(j){
-      clearInterval(iv);
-      document.getElementById('p2fill').style.width='100%';
-      document.getElementById('p2pct').textContent='100%';
-      document.getElementById('p2lbl').textContent='深度报告生成完成 ✓';
-      setTimeout(function(){
+  function runAnalyzer(prompt){
+    callAPI(prompt,4000,
+      function(j){
+        clearInterval(iv);
+        document.getElementById('p2fill').style.width='100%';
+        document.getElementById('p2pct').textContent='100%';
+        document.getElementById('p2lbl').textContent='深度报告生成完成 ✓';
+        setTimeout(function(){
+          document.getElementById('prog2').classList.remove('on');
+          document.getElementById('generate-btn').disabled=false;
+          document.getElementById('az-input-section').style.display='none';
+          renderReport(j);
+        },400);
+      },
+      function(msg){
+        clearInterval(iv);
         document.getElementById('prog2').classList.remove('on');
         document.getElementById('generate-btn').disabled=false;
-        document.getElementById('az-input-section').style.display='none';
-        renderReport(j);
-      },400);
-    },
-    function(msg){
-      clearInterval(iv);
-      document.getElementById('prog2').classList.remove('on');
-      document.getElementById('generate-btn').disabled=false;
-      refundProAccess();
-      err('az-err',msg);
-    },
-    images
-  );
+        refundProAccess();
+        err('az-err',msg);
+      },
+      images
+    );
+  }
+
+  if(customPrompt){
+    runAnalyzer(customPrompt);
+  } else {
+    var desc2=isTextMode?document.getElementById('room-desc').value.trim():'';
+    var fallback=function(){return isTextMode?P.fengshui(room,focus,desc2):P.fengshuiVision(room,focus,SELECTED_DOOR_DIR);};
+    renderPromptFromBackend('fengshui_analysis', {
+      mode:isTextMode?'文字描述':'图片识别',
+      room:room,
+      focus:focus,
+      door_dir:SELECTED_DOOR_DIR||'未填写',
+      desc:desc2||'（图片模式或用户未填写文字描述）'
+    }, fallback, runAnalyzer);
+  }
 });
 
 function renderReport(d){
@@ -837,8 +1056,8 @@ document.getElementById('dreambtn').addEventListener('click',function(){
   document.getElementById('dream-loading').classList.add('on');
   document.getElementById('dreambtn').disabled=true;
 
-  callAPI(P.dream(DREAM_EMOTION,DREAM_SUBJECTS,DREAM_TIME,txt), 2500,
-    function(j){
+  function runDream(prompt){
+    callAPI(prompt, 2500, function(j){
       document.getElementById('dream-loading').classList.remove('on');
       document.getElementById('dreambtn').disabled=false;
       document.getElementById('dreamres').style.display='block';
@@ -915,8 +1134,15 @@ document.getElementById('dreambtn').addEventListener('click',function(){
       document.getElementById('dreambtn').disabled=false;
       refundProAccess();
       err('dream-err',msg);
-    }
-  );
+    });
+  }
+
+  renderPromptFromBackend('dream_analysis', {
+    emotion:DREAM_EMOTION||'未选择',
+    subjects:DREAM_SUBJECTS.length?DREAM_SUBJECTS.join('、'):'未选择',
+    time:DREAM_TIME||'未选择',
+    text:txt||'（用户未填写具体细节）'
+  }, function(){return P.dream(DREAM_EMOTION,DREAM_SUBJECTS,DREAM_TIME,txt);}, runDream);
 });
 
 // 重新解梦
@@ -949,8 +1175,8 @@ document.getElementById('alm-btn').addEventListener('click',function(){
   document.getElementById('alm-loading').classList.add('on');
   document.getElementById('alm-btn').disabled=true;
   document.getElementById('alm-result').style.display='none';
-  callAPI(P.almanac(ds), 2000,
-    function(j){
+  function runAlmanac(prompt){
+    callAPI(prompt, 2000, function(j){
       document.getElementById('alm-loading').classList.remove('on');
       document.getElementById('alm-btn').disabled=false;
       document.getElementById('alm-gz').textContent=j.ganzhi||'--';
@@ -995,9 +1221,12 @@ document.getElementById('alm-btn').addEventListener('click',function(){
       (j.yi||[]).slice(0,2).forEach(function(t){pills+='<span class="pill pt">'+t.split('（')[0]+'</span>';});
       (j.ji||[]).slice(0,1).forEach(function(t){pills+='<span class="pill pr">忌'+t.split('（')[0]+'</span>';});
       document.getElementById('home-pills').innerHTML=pills;
+      saveHistory('今日黄历', ds+' 今日宜忌', '', j);
     },
     function(msg){document.getElementById('alm-loading').classList.remove('on');document.getElementById('alm-btn').disabled=false;refundProAccess();err('alm-err',msg);}
-  );
+    );
+  }
+  renderPromptFromBackend('almanac_today', {date:ds}, function(){return P.almanac(ds);}, runAlmanac);
 });
 
 // ═══════════════════════════════════════════
@@ -1097,6 +1326,13 @@ document.getElementById('profilebtn').addEventListener('click',function(){
 
     document.getElementById('prof-comment').textContent=br.master_comment||'';
     LAST_BAZI_DATA = {data: br, date: date, gender: gender};
+    try{
+      localStorage.setItem('cma_birth_profile', JSON.stringify({
+        date: date,
+        hour: Number.isNaN(hourVal) ? null : hourVal,
+        gender: gender
+      }));
+    }catch(e){}
     reportUsage(); saveHistory('命理报告', date+' '+gender+'命理报告', '', br);
     document.getElementById('profileres').scrollIntoView({behavior:'smooth',block:'nearest'});
   }).catch(function(e){refundProAccess();err('prof-err','八字计算连接失败，请确认代理已启动');document.getElementById('prof-loading').classList.remove('on');document.getElementById('profilebtn').disabled=false;});

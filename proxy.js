@@ -13,6 +13,142 @@ const path      = require('path');
 const crypto    = require('crypto');
 const app       = express();
 
+// ═══ Prompt 模板库（后台可动态维护） ═══
+const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
+const DEFAULT_PROMPTS = [
+  {
+    key: 'quick_ask_general',
+    name: '快捷问事·通用决策',
+    module: '快捷问事',
+    description: '用于不强制依赖生辰八字的问题，如黄历、解梦、风水常识、普通择事。',
+    content:
+`你是“国学决策助手”的高级顾问，融合黄历择日、风水环境、梦境象征与现代决策建议。
+请基于用户问题给出稳健、克制、可执行的建议。不要承诺绝对结果，不制造恐慌。
+
+当前日期：{{current_date}}
+问题类型：{{category_label}}
+用户问题：{{question}}
+
+如果问题涉及个人长期运势，但用户未提供出生信息，请先给出基础判断，并自然提示“补充出生信息后可结合个人命理进一步分析”。
+
+严格返回JSON，不输出其他内容：
+{"category":"{{category}}","need_birth":false,"summary":"一句话结论，30字以内","analysis":"详细分析，120-180字","actions":["可执行建议1","可执行建议2","可执行建议3"],"upgrade_hint":"适合的进阶服务提示，如无需则为空","consult_hint":"何种情况下建议真人咨询，40字以内"}`
+  },
+  {
+    key: 'quick_ask_bazi',
+    name: '快捷问事·命理增强',
+    module: '快捷问事',
+    description: '用于财运、事业、感情、流年/月运等需要结合个人命理的问题。',
+    content:
+`你是“国学决策助手”的命理决策顾问，精通八字格局、流年大运、五行喜忌与现实行动建议。
+请基于系统已计算的四柱数据进行分析，不要修改四柱，不要夸大确定性。
+
+当前日期：{{current_date}}
+问题类型：{{category_label}}
+用户问题：{{question}}
+
+【用户资料】
+{{birth_context}}
+
+【系统计算命理上下文】
+{{bazi_context}}
+
+严格返回JSON，不输出其他内容：
+{"category":"{{category}}","need_birth":true,"summary":"一句话结论，30字以内","analysis":"结合命理上下文的详细分析，160-240字","actions":["可执行建议1","可执行建议2","可执行建议3"],"timing":"近期适合/不适合行动的时间提示，60字以内","upgrade_hint":"建议解锁的报告或订阅权益，50字以内","consult_hint":"何种情况下建议真人咨询，50字以内"}`
+  },
+  {
+    key: 'fengshui_analysis',
+    name: '家宅风水诊断',
+    module: '家宅风水',
+    description: '空间图片/文字风水分析的专业提示词模板。',
+    content:
+`你是精通《葬书》环境风水、三元玄空飞星与八宅明镜的 AI 数字化风水顾问。结合现代环境科学与空间心理学，给出逻辑严密、可执行的环境优化报告。禁止使用“迷信、包治、保证改运”等绝对化表达。
+
+分析模式：{{mode}}
+空间类型：{{room}}
+分析侧重：{{focus}}
+入户门朝向：{{door_dir}}
+文字描述：{{desc}}
+
+如果是图片模式，请只基于图片中可见内容和用户补充朝向分析，不臆测看不到的信息；如果是文字模式，请只基于文字描述分析。
+
+严格返回JSON，不输出其他内容：
+{"score":整数50-95,"score_reason":"评分理由，50字以内","room_detected":"{{room}}","findings":[{"type":"good或warn或bad","text":"具体发现，不少于30字","suggestion":"具体可操作改善方案，不少于25字","detail":"风水原理与长期影响，不少于30字"}],"deep_analysis":{"qi_flow":"气流格局分析，60字以上","five_elements":"五行平衡分析，60字以上","sha_analysis":"形煞评估，60字以上","lucky_positions":"吉位位置与激活方案，60字以上","improvement_priority":"按优先级的改善步骤，80字以上"},"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"具体影响","how_to_use":"利用方式，20字以内"}],"items":["具体风水物品及摆放位置"],"remove":["需移除或调整的物品，无则空数组"],"master_comment":"顾问综合总评，结合实际情况深度分析，150字以上"}`
+  },
+  {
+    key: 'dream_analysis',
+    name: '梦境解析',
+    module: '梦境解析',
+    description: '梦境象征、心理状态、近期提醒分析模板。',
+    content:
+`你是融合传统梦象、道家符象学、荣格原型心理学与现代潜意识分析的梦境顾问。你的目标是帮助用户理解梦境背后的情绪、关系、压力和近期提醒，不制造恐慌，不做绝对预言。
+
+醒来感受：{{emotion}}
+梦中出现：{{subjects}}
+梦境时间：{{time}}
+补充细节：{{text}}
+
+请从潜意识信号、梦象五行、近30天提醒和行动建议四个维度分析。
+
+严格返回JSON，不输出其他内容：
+{"summary":"梦境整体解读，不少于120字","element":"梦境主五行（木/火/土/金/水）","omen":"good或warn或bad","symbols":[{"icon":"emoji","name":"意象名称","meaning":"象征含义与五行对应，不少于40字","type":"吉或凶或中","significance":"对梦者的具体启示，20字以内"}],"prediction":"综合近30天运势/状态提醒，不少于80字","aspects":{"career":{"text":"事业提醒，25字","score":整数30-95},"wealth":{"text":"财务提醒，25字","score":整数30-95},"relationship":{"text":"感情提醒，25字","score":整数30-95},"health":{"text":"身心状态提示，25字","score":整数30-95}},"remedy":"有明显警示时给出舒缓或规避建议，无则为空字符串","advice":"今日立即可做的1个具体行动，40字以内","master_comment":"顾问综合分析，不少于120字"}`
+  },
+  {
+    key: 'almanac_today',
+    name: '今日宜忌/择日黄历',
+    module: '今日决策',
+    description: '今日宜忌、吉时方位、事项适配分析模板。',
+    content:
+`你是精通中国传统黄历、干支历法、十二建除与日常择事的时空决策顾问。请用冷静、清晰、可执行的方式解释今日宜忌，避免绝对化承诺。
+
+今日公历日期：{{date}}
+
+请完成：干支判断、今日宜忌、吉神凶煞、吉时方位、吉祥颜色、五行能量分布和今日总结。
+
+严格返回JSON，不输出其他内容：
+{"ganzhi":"完整干支如甲子日","day_element":"日柱五行","lucky_gods":[{"name":"吉神名","meaning":"含义与今日影响，20字以内"}],"bad_gods":[{"name":"凶煞名","meaning":"影响与注意事项，20字以内"}],"yi":["宜1（具体说明）","宜2","宜3","宜4","宜5"],"ji":["忌1（具体说明）","忌2","忌3"],"lucky_hours":[{"name":"时辰名","time":"时间段","suitable":"适合做什么"},{"name":"时辰名","time":"时间段","suitable":"适合做什么"}],"lucky_dirs":["方位1","方位2"],"lucky_colors":["颜色1（对应五行）","颜色2（对应五行）"],"elements":{"wood":整数,"fire":整数,"earth":整数,"metal":整数,"water":整数},"risk_warning":"今日需避开的方位或行为，30字以内","day_summary":"今日综合分析，不少于100字"}`
+  },
+  {
+    key: 'bazi_report',
+    name: '命理报告',
+    module: '运势命理',
+    description: '八字命盘、格局、流年、大运、建议分析模板。',
+    content: '预置模块：命理报告。当前版本后端使用多Agent硬编码Prompt，后续可迁移到模板调用。'
+  },
+  {
+    key: 'wealth_report',
+    name: '财富运势',
+    module: '运势命理',
+    description: '财格、正偏财、旺财布局、财运周期分析模板。',
+    content: '预置模块：财富运势。当前版本后端使用多Agent硬编码Prompt，后续可迁移到模板调用。'
+  }
+];
+
+function ensureDataDir(){
+  const dir = path.join(__dirname, 'data');
+  if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+function loadPrompts(){
+  ensureDataDir();
+  let prompts = [];
+  try{
+    if(fs.existsSync(PROMPTS_FILE)) prompts = JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8'));
+  }catch(e){ prompts = []; }
+  const byKey = new Map(prompts.map(p => [p.key, p]));
+  DEFAULT_PROMPTS.forEach(p => { if(!byKey.has(p.key)) byKey.set(p.key, {...p, updated_at: null}); });
+  return Array.from(byKey.values());
+}
+function savePrompts(prompts){
+  ensureDataDir();
+  fs.writeFileSync(PROMPTS_FILE, JSON.stringify(prompts, null, 2), 'utf8');
+}
+function getPrompt(key){
+  return loadPrompts().find(p => p.key === key) || DEFAULT_PROMPTS.find(p => p.key === key);
+}
+function renderTemplate(tpl, vars){
+  return String(tpl || '').replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] == null ? '' : String(vars[k]));
+}
+
 // ═══ 信任 Nginx 反向代理（修复 X-Forwarded-For 限流问题） ═══
 app.set('trust proxy', 1);
 
@@ -313,6 +449,66 @@ function extractJSON(text){
   return JSON.parse(stripped.substring(s, e+1));
 }
 
+function classifyQuestion(question){
+  const q = String(question || '').toLowerCase();
+  const has = (words) => words.some(w => q.includes(w));
+  if(has(['合盘','合婚','配不配','适不适合在一起','复合'])) return { category:'compatibility', label:'合盘/关系匹配', birth:'required' };
+  if(has(['流年','今年','明年','未来','三个月','半年','月运','运势','转运','不顺','低谷'])) return { category:'fortune', label:'运势趋势', birth:'required' };
+  if(has(['财运','求财','赚钱','投资','破财','副业','涨薪','收入'])) return { category:'wealth', label:'财富运势', birth:'required' };
+  if(has(['事业','工作','跳槽','创业','面试','升职','合作'])) return { category:'career', label:'事业决策', birth:'required' };
+  if(has(['感情','婚姻','恋爱','桃花','结婚','离婚','对象'])) return { category:'relationship', label:'感情婚恋', birth:'required' };
+  if(has(['签约','合同','开业','搬家','入宅','领证','提车','装修','动土','表白','见客户','今天','明天','日期','吉日','吉时'])) return { category:'timing', label:'今日/择日决策', birth:'optional' };
+  if(has(['梦到','做梦','梦见','梦里'])) return { category:'dream', label:'梦境解析', birth:'none' };
+  if(has(['户型','房子','住宅','卧室','客厅','厨房','办公桌','镜子','床头','财位','朝向','风水'])) return { category:'fengshui', label:'家宅风水', birth:'none' };
+  return { category:'general', label:'综合问事', birth:'optional' };
+}
+
+function buildBaziContext(birth){
+  if(!birth || !birth.date) return null;
+  const parts = String(birth.date).split('-').map(n => parseInt(n, 10));
+  if(parts.length !== 3 || parts.some(n => !n)) return null;
+  const hour = birth.hour !== null && birth.hour !== undefined && birth.hour !== '' ? parseInt(birth.hour, 10) : null;
+  const gender = birth.gender || '男';
+  const bazi = calcBazi(parts[0], parts[1], parts[2], Number.isNaN(hour) ? null : hour, gender);
+  return {
+    birthContext: `出生日期：${birth.date}；出生时辰：${birth.timeLabel || (hour == null ? '不详' : hour + '时')}；性别：${gender}；出生地：${birth.birthplace || '未填写'}`,
+    baziContext: `四柱：年${bazi.pillars.year.gan}${bazi.pillars.year.zhi} 月${bazi.pillars.month.gan}${bazi.pillars.month.zhi} 日${bazi.pillars.day.gan}${bazi.pillars.day.zhi} 时${bazi.pillars.hour.gan}${bazi.pillars.hour.zhi}
+日主：${bazi.daymaster}，身${bazi.strength === 'strong' ? '强' : '弱'}；五行：木${bazi.wuxing['木']}% 火${bazi.wuxing['火']}% 土${bazi.wuxing['土']}% 金${bazi.wuxing['金']}% 水${bazi.wuxing['水']}%；喜用：${bazi.yongShen}；忌：${bazi.jiShen}
+当前大运：${bazi.dayun.current}；近年流年：${bazi.nowYears.map(y => `${y.yr}年${y.gz}(${y.ganWx}${y.zhiWx})`).join(' ')}`
+  };
+}
+
+function hasModelKey(model){
+  if(!model || model === 'groq') return !!process.env.GROQ_API_KEY;
+  return !!process.env.OPENROUTER_API_KEY;
+}
+
+function buildQuickAskFallback(question, cls, hasBirth){
+  const commonActions = {
+    timing: ['先确认事项是否必须今天完成，非刚需可优先选择上午沟通。', '签约、付款、开业类事项建议避开情绪波动时段，先复核关键条款。', '如金额较大，可补充出生信息后做个人择时增强分析。'],
+    dream: ['记录梦中最强烈的意象和醒来情绪，先判断它对应压力、关系还是财务主题。', '今天避免因梦境直接做重大决定，先观察现实中是否有相同信号。', '如果同类梦反复出现，可继续做梦境深度解析。'],
+    fengshui: ['先补充户型、朝向、门窗、床/桌/沙发位置，判断会更准确。', '优先检查门窗对冲、床头无靠、镜子对床、横梁压顶这些高频问题。', '涉及买房、装修、办公位调整时，建议上传图片做完整风水诊断。'],
+    wealth: ['先区分这是短期求财、长期收入，还是破财风险问题。', '近期不要只看单一机会，先复盘收入来源、支出漏洞和合作风险。', '财运类问题建议补充出生信息，结合财星、流年、大运分析。'],
+    career: ['先明确当前是跳槽、升职、创业还是合作选择，不同问题判断标准不同。', '短期先看现实筹码：资源、现金流、贵人支持和风险承受力。', '事业类问题建议补充出生信息，结合命理趋势做增强判断。'],
+    relationship: ['先区分关系处在暧昧、磨合、冲突还是决策阶段。', '今天不建议只凭情绪做结论，先看对方行动是否稳定。', '感情婚恋类问题补充出生信息后，可进一步看关系节奏与适配度。'],
+    fortune: ['先把“不顺”拆成事业、财务、感情、健康或家宅环境，避免泛泛判断。', '短期先减少高风险决策，优先处理拖延事项和反复出错的环节。', '运势趋势类问题需要出生信息，结合流年/月运判断会更有价值。'],
+    compatibility: ['合盘类问题需要双方出生信息，单靠一句描述只能做关系沟通建议。', '先观察价值观、金钱观、家庭边界和冲突处理方式。', '建议补充双方生日后做合盘或真人咨询。'],
+    general: ['先把问题具体化为时间、对象、事项和你担心的结果。', '能马上验证的信息先用现实依据判断，玄学分析适合做辅助决策。', '如果问题牵涉长期运势，可补充出生信息做增强分析。']
+  };
+  const actions = commonActions[cls.category] || commonActions.general;
+  return {
+    category: cls.category,
+    need_birth: cls.birth === 'required' && !hasBirth,
+    summary: hasBirth ? '已进入个人化问事判断。' : '已给出基础判断，可补资料增强。',
+    analysis: `当前问题属于“${cls.label}”。本地基础判断会先从事项性质、时间压力、现实风险和可执行动作入手；如果要结合八字、流年、大运等个人命理维度，需要补充出生日期、时辰和性别。你的问题是：“${question}”。`,
+    actions,
+    timing: cls.category === 'timing' ? '普通择事可先看今日宜忌；重大事项建议进一步做个人择日。' : '',
+    upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '补充出生信息后，可解锁命理增强分析或专题报告。',
+    consult_hint: '涉及买房、投资、婚姻、开业等高成本决策时，建议真人咨询。',
+    fallback: true
+  };
+}
+
 // ═══ 通用聊天接口（解梦、黄历、风水、追问） ═══
 app.post('/api/chat', requireToken, async(req,res)=>{
   try{
@@ -340,6 +536,76 @@ app.post('/api/chat', requireToken, async(req,res)=>{
     const text = await callLLM(msgs, maxTok, model);
     res.json({ content: [{ type: 'text', text }] });
   } catch(e) { res.status(500).json({ error: { message: '分析服务暂时不可用，请稍后重试' } }); }
+});
+
+// ═══ 快捷问事：先分类，再按资料完整度调用对应 Prompt ═══
+app.post('/api/quick-ask', requireToken, async(req,res)=>{
+  try{
+    const question = String(req.body.question || '').trim().slice(0, 500);
+    if(!question) return res.status(400).json({ error: { message: '请先输入要问的事情' } });
+
+    const cls = classifyQuestion(question);
+    const birthInfo = buildBaziContext(req.body.birth || null);
+    if(cls.birth === 'required' && !birthInfo){
+      return res.json({
+        ok: true,
+        needs_birth: true,
+        category: cls.category,
+        category_label: cls.label,
+        message: '这个问题需要结合个人命理判断，请先补充出生日期、时辰和性别。'
+      });
+    }
+
+    const useBazi = !!birthInfo && cls.birth !== 'none';
+    const promptTpl = getPrompt(useBazi ? 'quick_ask_bazi' : 'quick_ask_general');
+    const vars = {
+      current_date: new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+      question,
+      category: cls.category,
+      category_label: cls.label,
+      birth_context: birthInfo?.birthContext || '',
+      bazi_context: birthInfo?.baziContext || ''
+    };
+    const prompt = renderTemplate(promptTpl?.content, vars);
+    let model = req.body.selected_model || 'groq';
+    if(!hasModelKey(model) && hasModelKey('groq')) model = 'groq';
+    if(!hasModelKey(model)){
+      return res.json({
+        ok:true,
+        needs_birth:false,
+        category:cls.category,
+        category_label:cls.label,
+        data:buildQuickAskFallback(question, cls, !!birthInfo),
+        warning:'模型 API Key 未配置，已返回本地基础版结果。'
+      });
+    }
+    const text = await callLLM([{ role:'user', content: prompt }], 2500, model);
+    let data;
+    try{ data = extractJSON(text); }
+    catch(e){ data = { summary:'已完成基础判断', analysis:text.slice(0, 1200), actions:[], upgrade_hint:'', consult_hint:'' }; }
+    res.json({ ok:true, needs_birth:false, category:cls.category, category_label:cls.label, data });
+  }catch(e){
+    res.status(500).json({ error: { message: '快捷问事服务暂时不可用，请稍后重试' } });
+  }
+});
+
+// ═══ Prompt 渲染：前端功能统一从后台模板取指令 ═══
+app.post('/api/prompt/render', requireToken, (req,res)=>{
+  try{
+    const key = String(req.body.key || '').trim();
+    if(!key) return res.status(400).json({ error: { message: '缺少 Prompt key' } });
+    const tpl = getPrompt(key);
+    if(!tpl) return res.status(404).json({ error: { message: '找不到 Prompt 模板' } });
+    const vars = req.body.vars && typeof req.body.vars === 'object' ? req.body.vars : {};
+    const safeVars = {};
+    Object.keys(vars).slice(0, 30).forEach(k => {
+      const val = vars[k];
+      safeVars[k] = Array.isArray(val) ? val.join('、') : String(val == null ? '' : val).slice(0, 8000);
+    });
+    res.json({ ok:true, key, prompt:renderTemplate(tpl.content, safeVars), updated_at:tpl.updated_at || null });
+  }catch(e){
+    res.status(500).json({ error: { message: 'Prompt 渲染失败' } });
+  }
 });
 
 // ═══ 八字命盘接口（三 Agent 架构：格局师 + 运程师 → 综合顾问） ═══
@@ -548,6 +814,7 @@ function loadCodes(){
   return [];
 }
 function saveCodes(codes){
+  ensureDataDir();
   try{ fs.writeFileSync(CODES_FILE, JSON.stringify(codes,null,2),'utf8'); }
   catch(e){ console.error('保存激活码失败:',e.message); }
 }
@@ -625,6 +892,39 @@ app.get('/api/admin/codes',(req,res)=>{
     total_credits_used:codes.reduce((s,c)=>s+(c.credits_used||0),0),
   };
   res.json({ok:true,codes,stats});
+});
+// Prompt 模板列表
+app.get('/api/admin/prompts',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  res.json({ok:true,prompts:loadPrompts()});
+});
+// 更新 Prompt 模板
+app.post('/api/admin/prompts/update',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  const key = String(req.body.key || '').trim();
+  const content = String(req.body.content || '');
+  if(!key) return res.json({ok:false,message:'缺少模板 key'});
+  if(content.length < 10) return res.json({ok:false,message:'Prompt 内容过短'});
+  const prompts = loadPrompts();
+  const idx = prompts.findIndex(p => p.key === key);
+  if(idx === -1) return res.json({ok:false,message:'找不到该 Prompt 模板'});
+  prompts[idx] = {...prompts[idx], content, updated_at:new Date().toISOString()};
+  savePrompts(prompts);
+  res.json({ok:true,prompt:prompts[idx]});
+});
+// 恢复默认 Prompt 模板
+app.post('/api/admin/prompts/reset',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  const key = String(req.body.key || '').trim();
+  const def = DEFAULT_PROMPTS.find(p => p.key === key);
+  if(!def) return res.json({ok:false,message:'找不到默认模板'});
+  const prompts = loadPrompts();
+  const idx = prompts.findIndex(p => p.key === key);
+  const next = {...def, updated_at:new Date().toISOString()};
+  if(idx >= 0) prompts[idx] = next;
+  else prompts.push(next);
+  savePrompts(prompts);
+  res.json({ok:true,prompt:next});
 });
 // 撤销/删除激活码
 app.post('/api/admin/revoke',(req,res)=>{

@@ -59,6 +59,15 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 .filter-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
 .filter-btn{padding:5px 14px;background:none;border:0.5px solid var(--b);border-radius:5px;color:var(--ts);font-size:11px;cursor:pointer;font-family:inherit;transition:all .18s}
 .filter-btn:hover,.filter-btn.on{border-color:var(--bs);color:var(--gold);background:rgba(201,168,76,0.07)}
+.prompt-grid{display:grid;gap:14px}
+.prompt-card{background:var(--ink2);border:0.5px solid var(--b);border-radius:12px;padding:16px}
+.prompt-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.prompt-name{font-size:14px;color:var(--gold);font-weight:600;margin-bottom:4px}
+.prompt-meta{font-size:11px;color:var(--ts);line-height:1.6}
+.prompt-ta{width:100%;min-height:180px;resize:vertical;background:var(--ink3);border:0.5px solid var(--b);border-radius:8px;padding:12px;color:var(--tp);font-size:12px;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;outline:none}
+.prompt-ta:focus{border-color:var(--bs)}
+.prompt-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
+.prompt-msg{font-size:11px;color:var(--ts);min-height:15px}
 </style>
 </head>
 <body>
@@ -134,6 +143,14 @@ tr:hover td{background:rgba(201,168,76,0.03)}
     </div>
   </div>
 
+  <!-- Prompt 模板 -->
+  <div class="section">
+    <div class="section-title">Prompt 模板配置</div>
+    <div class="prompt-grid" id="prompt-grid">
+      <div class="empty">登录后加载 Prompt 模板</div>
+    </div>
+  </div>
+
   <!-- 激活码列表 -->
   <div class="section">
     <div class="section-title">激活码列表</div>
@@ -168,6 +185,7 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 <script>
 var SECRET = '';
 var ALL_CODES = [];
+var ALL_PROMPTS = [];
 var CURRENT_FILTER = 'all';
 var NEW_CODE_VAL = '';
 
@@ -181,6 +199,7 @@ function doLogin(){
       document.getElementById('login-view').style.display='none';
       document.getElementById('admin-view').style.display='block';
       renderData(d);
+      loadPrompts();
     })
     .catch(function(){document.getElementById('login-msg').textContent='连接失败，请确认服务器已启动';});
 }
@@ -189,6 +208,7 @@ function loadData(){
   fetch('/api/admin/codes?secret='+encodeURIComponent(SECRET))
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok)renderData(d);});
+  loadPrompts();
 }
 
 function renderData(d){
@@ -255,6 +275,63 @@ function fmtDate(iso){
 }
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return escHtml(s).replace(/"/g,'&quot;');}
+
+function loadPrompts(){
+  if(!SECRET)return;
+  fetch('/api/admin/prompts?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok){ALL_PROMPTS=d.prompts||[];renderPrompts();}});
+}
+
+function renderPrompts(){
+  var grid=document.getElementById('prompt-grid');
+  grid.innerHTML='';
+  if(!ALL_PROMPTS.length){grid.innerHTML='<div class="empty">暂无 Prompt 模板</div>';return;}
+  ALL_PROMPTS.forEach(function(p){
+    var card=document.createElement('div');
+    card.className='prompt-card';
+    card.innerHTML=
+      '<div class="prompt-head">'+
+        '<div><div class="prompt-name">'+escHtml(p.name||p.key)+'</div>'+
+        '<div class="prompt-meta">'+escHtml(p.module||'-')+' · '+escHtml(p.key)+'<br>'+escHtml(p.description||'')+
+        (p.updated_at?'<br>更新于 '+fmtDate(p.updated_at):'')+'</div></div>'+
+        '<div style="display:flex;gap:8px"><button class="btn-sm" onclick="savePrompt(\''+escAttr(p.key)+'\')">保存</button><button class="btn-danger" onclick="resetPrompt(\''+escAttr(p.key)+'\')">恢复默认</button></div>'+
+      '</div>'+
+      '<textarea class="prompt-ta" id="prompt-'+escAttr(p.key)+'">'+escHtml(p.content||'')+'</textarea>'+
+      '<div class="prompt-actions"><div class="prompt-msg" id="prompt-msg-'+escAttr(p.key)+'"></div></div>';
+    grid.appendChild(card);
+  });
+}
+
+function savePrompt(key){
+  var ta=document.getElementById('prompt-'+key);
+  var msg=document.getElementById('prompt-msg-'+key);
+  if(!ta)return;
+  msg.textContent='保存中…';
+  fetch('/api/admin/prompts/update',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({secret:SECRET,key:key,content:ta.value})
+  }).then(function(r){return r.json();}).then(function(d){
+    msg.textContent=d.ok?'✓ 已保存':('✕ '+(d.message||'保存失败'));
+    msg.style.color=d.ok?'#4CAF76':'#E08080';
+    if(d.ok)loadPrompts();
+  }).catch(function(){msg.textContent='网络错误';msg.style.color='#E08080';});
+}
+
+function resetPrompt(key){
+  if(!confirm('确定恢复该 Prompt 的默认内容？'))return;
+  var msg=document.getElementById('prompt-msg-'+key);
+  msg.textContent='恢复中…';
+  fetch('/api/admin/prompts/reset',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({secret:SECRET,key:key})
+  }).then(function(r){return r.json();}).then(function(d){
+    msg.textContent=d.ok?'✓ 已恢复默认':('✕ '+(d.message||'恢复失败'));
+    msg.style.color=d.ok?'#4CAF76':'#E08080';
+    if(d.ok)loadPrompts();
+  }).catch(function(){msg.textContent='网络错误';msg.style.color='#E08080';});
+}
 
 function copyCode(code){
   navigator.clipboard.writeText(code).then(function(){
