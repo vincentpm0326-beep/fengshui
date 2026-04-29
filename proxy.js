@@ -46,7 +46,7 @@ const DEFAULT_PROMPTS = [
     key: 'quick_ask_general',
     name: '快捷问事·通用决策',
     module: '快捷问事',
-    description: '用于不强制依赖生辰八字的问题，如黄历、解梦、风水常识、普通择事。',
+    description: '调用条件：普通择事、黄历、解梦、风水常识等不强制依赖生辰八字的问题。',
     content:
 `你是“国学决策助手”的高级顾问，融合黄历择日、风水环境、梦境象征与现代决策建议。
 请基于用户问题给出稳健、克制、可执行的建议。不要承诺绝对结果，不制造恐慌。
@@ -66,7 +66,7 @@ const DEFAULT_PROMPTS = [
     key: 'quick_ask_bazi',
     name: '快捷问事·命理增强',
     module: '快捷问事',
-    description: '用于财运、事业、感情、流年/月运等需要结合个人命理的问题。',
+    description: '调用条件：事业、财运、感情、流年/月运、不顺、合盘等需要结合个人命理的问题。',
     content:
 `你是“国学决策助手”的命理决策顾问，精通八字格局、流年大运、五行喜忌与现实行动建议。
 请基于系统已计算的四柱数据进行分析，不要修改四柱，不要夸大确定性。
@@ -166,7 +166,19 @@ function loadPrompts(){
     if(fs.existsSync(PROMPTS_FILE)) prompts = JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8'));
   }catch(e){ prompts = []; }
   const byKey = new Map(prompts.map(p => [p.key, p]));
-  DEFAULT_PROMPTS.forEach(p => { if(!byKey.has(p.key)) byKey.set(p.key, {...p, updated_at: null}); });
+  DEFAULT_PROMPTS.forEach(p => {
+    if(!byKey.has(p.key)){
+      byKey.set(p.key, {...p, updated_at: null});
+    } else {
+      const saved = byKey.get(p.key);
+      byKey.set(p.key, {
+        ...saved,
+        name: p.name,
+        module: p.module,
+        description: p.description
+      });
+    }
+  });
   return Array.from(byKey.values());
 }
 function savePrompts(prompts){
