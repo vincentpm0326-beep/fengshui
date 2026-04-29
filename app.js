@@ -875,7 +875,6 @@ document.getElementById('ask-btn').addEventListener('click',function(){
     document.getElementById('ask-result').classList.add('show');
     if(j.warning&&d.fallback){
       refundProAccess();
-      document.getElementById('ask-upgrade').textContent=(d.upgrade_hint||'')+' 当前为本地基础版；配置模型 API Key 后可启用深度 AI 分析。';
     } else {
       reportUsage();
     }
