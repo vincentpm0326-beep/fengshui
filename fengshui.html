@@ -359,8 +359,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ask-result.show{display:block}
 .ask-summary{font-size:15px;color:var(--navy);font-weight:700;margin-bottom:8px}
 .ask-tag{display:inline-block;padding:3px 9px;border-radius:12px;background:rgba(201,168,76,.12);color:var(--gold);font-size:10px;margin-bottom:10px}
+.ask-analysis-text{white-space:pre-line;line-height:1.9}
 .ask-actions{display:grid;gap:8px;margin-top:12px}
-.ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.6}
+.ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.7;white-space:pre-line}
 @media(max-width:560px){.birth-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.account-grid{grid-template-columns:1fr}.account-actions{flex-direction:column}}
 
@@ -407,7 +408,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <circle cx="16" cy="26" r="1.5" fill="#C9A84C" opacity=".5"/>
       <circle cx="6" cy="16" r="1.5" fill="#C9A84C" opacity=".5"/>
     </svg>
-    <div><div class="logo-cn">CYBER METAPHYSICS</div><div class="logo-sub">能量建模·时空规律·环境优化</div></div>
+    <div><div class="logo-cn">CYBER METAPHYSICS</div><div class="logo-sub">命理问事·风水堪舆·择日解梦</div></div>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-p="home">首页</button>
@@ -426,8 +427,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="page on" id="page-home">
   <div class="hero">
     <div class="hero-g">☯</div>
-    <div class="hero-t">数字化命理与风水架构</div>
-    <div class="hero-s">Bazi · Qi Men · Feng Shui · 冷静顾问式分析</div>
+    <div class="hero-t">命理风水大师问事馆</div>
+    <div class="hero-s">八字命盘 · 风水堪舆 · 黄历择日 · 梦象解析</div>
     <div class="divider"></div>
   </div>
   <div class="daily">
@@ -444,13 +445,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="home-ask-btn" onclick="goHomeAsk()">✦ 问一问</button>
   </div>
   <div class="mods" id="mods">
-    <div class="mod feat" data-goto="ask"><div class="mbadge">NEW</div><div class="mod-icon">✦</div><div class="mod-name">快捷问事</div><div class="mod-desc">先问问题，再判断是否需八字</div></div>
-    <div class="mod feat" data-goto="analyzer"><div class="mbadge">AI</div><div class="mod-icon">🏠</div><div class="mod-name">空间分析</div><div class="mod-desc">环境优化与煞气识别</div></div>
+    <div class="mod feat" data-goto="ask"><div class="mbadge">问事</div><div class="mod-icon">✦</div><div class="mod-name">快捷问事</div><div class="mod-desc">问一事，断吉凶与应期</div></div>
+    <div class="mod feat" data-goto="analyzer"><div class="mbadge">堪舆</div><div class="mod-icon">🏠</div><div class="mod-name">空间分析</div><div class="mod-desc">察形煞，定财位与旺气</div></div>
     <div class="mod" data-goto="dream"><div class="mod-icon">🌙</div><div class="mod-name">周公解梦</div><div class="mod-desc">三层深度解析梦境</div></div>
     <div class="mod" data-goto="almanac"><div class="mod-icon">📅</div><div class="mod-name">每日黄历</div><div class="mod-desc">奇门遁甲推算吉凶</div></div>
-    <div class="mod" data-goto="profile"><div class="mod-icon">☰</div><div class="mod-name">命理报告</div><div class="mod-desc">四柱建模与决策建议</div></div>
+    <div class="mod" data-goto="profile"><div class="mod-icon">☰</div><div class="mod-name">命理报告</div><div class="mod-desc">四柱排盘，格局大运详断</div></div>
     <div class="mod feat" data-goto="wealth"><div class="mbadge" style="background:linear-gradient(135deg,#8B1A1A,#6B0000);color:#FFD580">会员</div><div class="mod-icon">💰</div><div class="mod-name">财运分析</div><div class="mod-desc">八字财格，旺财布局</div></div>
-    <div class="mod" data-goto="reports"><div class="mod-icon">▣</div><div class="mod-name">报告中心</div><div class="mod-desc">沉淀已生成分析</div></div>
+    <div class="mod" data-goto="reports"><div class="mod-icon">▣</div><div class="mod-name">报告中心</div><div class="mod-desc">收藏你的命理风水记录</div></div>
   </div>
   <!-- 历史记录 -->
   <div class="history-section" id="home-history" style="display:none">
@@ -465,10 +466,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ═══ 报告中心 ═══ -->
 <div class="page" id="page-reports">
   <div class="h1">报告中心</div>
-  <div class="h2">保存你的问事、命理、风水、解梦和财运分析记录</div>
+  <div class="h2">保存你的问事、命理、风水、解梦和财运报告</div>
   <div class="card">
     <div class="history-title">
-      <span>已生成报告</span>
+      <span>我的报告</span>
       <div style="display:flex;gap:8px">
         <button class="btn-ghost" id="refresh-reports-btn">刷新</button>
         <button class="btn-ghost" id="clear-reports-btn">清空</button>
@@ -481,7 +482,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ═══ 快捷问事 ═══ -->
 <div class="page" id="page-ask">
   <div class="h1">快捷问事</div>
-  <div class="h2">固定使用通用问事逻辑，先给基础判断，再推荐对应深度模块</div>
+  <div class="h2">一事一问，由大师断事象、看应期；补充生辰后可合参八字与流年</div>
   <div class="card">
     <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">你想问什么</label>
     <textarea class="form-ta" id="ask-question" rows="5" placeholder="例如：今天适合签合同吗？最近总是不顺是什么原因？今年财运怎么样？这个房子能买吗？梦到蛇是什么意思？"></textarea>
@@ -493,7 +494,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <span class="ask-sample">梦到蛇是什么意思？</span>
     </div>
     <div class="birth-panel" id="ask-birth-panel">
-      <div style="font-size:12px;color:var(--navy);font-weight:700;margin-bottom:8px">可选资料：用于账号画像和后续命理/财运专属模块</div>
+      <div style="font-size:12px;color:var(--navy);font-weight:700;margin-bottom:8px">补充生辰后，师傅会合参八字、大运与流年，判断更贴合你本人</div>
       <div class="birth-grid">
         <div>
           <label style="font-size:10px;color:var(--ts);display:block;margin-bottom:5px">出生日期</label>
@@ -522,12 +523,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
   <div class="errbox" id="ask-err"></div>
   <button class="btn-out" id="ask-btn">开始问事</button>
-  <div class="loading" id="ask-loading"><div class="spin"></div>AI 正在判断问题类型...<div class="loading-sub">问事分类 · 资料校验 · 专业 Prompt 调用</div></div>
+  <div class="loading" id="ask-loading"><div class="spin"></div>大师正在起卦问事...<div class="loading-sub">观事象 · 断吉凶 · 看应期</div></div>
   <div class="ask-result" id="ask-result">
     <div class="card">
       <div class="ask-tag" id="ask-category"></div>
       <div class="ask-summary" id="ask-summary"></div>
-      <div class="aitxt" id="ask-analysis"></div>
+      <div class="aitxt ask-analysis-text" id="ask-analysis"></div>
       <div class="ask-actions" id="ask-actions"></div>
       <div class="report-grid" style="margin-top:12px">
         <div class="report-block"><div class="report-k">进阶建议</div><div class="report-v" id="ask-upgrade"></div></div>
@@ -541,7 +542,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ═══ 空间分析 ═══ -->
 <div class="page" id="page-analyzer">
   <div class="h1">空间风水分析</div>
-  <div class="h2">上传图片，AI 直接识别空间能量格局</div>
+  <div class="h2">上传空间照片，由风水师察气口、看形煞、定旺位</div>
 
   <div id="az-input-section">
     <!-- 费用提示 -->
@@ -622,14 +623,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="btn-ghost" id="adv-toggle" style="font-size:11px">⚙ 高级模式：查看 / 编辑分析指令</button>
     </div>
     <div class="adv-panel" id="adv-panel" style="display:none!important">
-      <div style="font-size:11px;color:var(--td);margin-bottom:8px;line-height:1.6">💡 以下为系统自动生成的分析指令，您可在生成前手动补充信息（图片将自动附加）</div>
-      <textarea class="prompt-ta" id="prompt-ta" spellcheck="false" placeholder="点击「⚙ 高级模式」自动生成指令..."></textarea>
+      <div style="font-size:11px;color:var(--td);margin-bottom:8px;line-height:1.6">可补充你最在意的空间问题，例如财位、睡眠、事业或桃花</div>
+      <textarea class="prompt-ta" id="prompt-ta" spellcheck="false" placeholder="补充你想重点看的风水问题..."></textarea>
       <button class="btn-ghost" id="reset-btn" style="font-size:11px;margin-bottom:10px">↺ 重置为默认指令</button>
     </div>
 
     <div class="errbox" id="az-err"></div>
     <div class="prog" id="prog2">
-      <div class="ph"><div class="plbl" id="p2lbl">AI 识别图像中...</div><div class="ppct" id="p2pct">0%</div></div>
+      <div class="ph"><div class="plbl" id="p2lbl">风水师正在察看格局...</div><div class="ppct" id="p2pct">0%</div></div>
       <div class="pbar"><div class="pfill" id="p2fill"></div></div>
     </div>
     <button class="btn-red" id="generate-btn">开始风水分析</button>
@@ -639,7 +640,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div style="font-size:11px;color:var(--td)">📝 点击文字可直接编辑</div>
       <div style="display:flex;gap:7px">
-        <button class="btn-ghost" id="re-gen-btn">重新生成</button>
+        <button class="btn-ghost" id="re-gen-btn">重新详批</button>
         <button class="btn-ghost" id="copy-btn">复制报告</button>
       </div>
     </div>
@@ -649,7 +650,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="rhead">
         <div>
           <div class="rtitle" id="rtitle" contenteditable="true"></div>
-          <div class="rmeta">Cyber Metaphysics Architect · 能量建模 · 时空规律 · 环境优化</div>
+          <div class="rmeta">风水堪舆 · 五行生克 · 方位旺衰 · 形煞化解</div>
         </div>
         <div class="sbox">
           <div class="snum" id="snum" contenteditable="true">--</div>
@@ -687,13 +688,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
     <!-- 大师总评 -->
     <div class="aibox">
-      <div class="ailbl"><div class="aidot"></div>顾问综合分析</div>
+      <div class="ailbl"><div class="aidot"></div>大师综合断语</div>
       <div class="aitxt" id="comment" contenteditable="true" style="min-height:60px"></div>
     </div>
 
     <!-- 追问功能 -->
     <div class="followup">
-      <div class="followup-title">✦ 深度咨询顾问</div>
+      <div class="followup-title">✦ 继续请教师傅</div>
       <div class="followup-chips" id="followup-chips">
         <span class="fchip">财位具体如何激活？</span>
         <span class="fchip">如何化解门旁镜煞？</span>
@@ -702,8 +703,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <span class="fchip">适合放什么植物？</span>
       </div>
       <div class="followup-input">
-        <textarea class="followup-ta" id="followup-input" placeholder="向顾问提问..."></textarea>
-        <button class="followup-btn" id="followup-btn">咨询顾问</button>
+        <textarea class="followup-ta" id="followup-input" placeholder="继续问风水师..."></textarea>
+        <button class="followup-btn" id="followup-btn">请教师傅</button>
       </div>
       <div class="followup-answer" id="followup-answer"></div>
     </div>
@@ -722,7 +723,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="nsc-item" onclick="goTo('ask')">
           <div class="nsc-item-icon">✦</div>
-          <div class="nsc-item-body"><div class="nsc-item-title">追问顾问</div><div class="nsc-item-desc">针对报告中的发现继续深入咨询</div></div>
+          <div class="nsc-item-body"><div class="nsc-item-title">继续问事</div><div class="nsc-item-desc">针对报告中的发现继续请教师傅</div></div>
         </div>
       </div>
     </div>
@@ -783,7 +784,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="btn-out" id="dreambtn">开始解梦</button>
   </div>
 
-  <div class="loading" id="dream-loading"><div class="spin"></div>AI 正在解析梦境...<div class="loading-sub">潜意识信号 · 时空规律 · 行动建议</div></div>
+  <div class="loading" id="dream-loading"><div class="spin"></div>大师正在解读梦象...<div class="loading-sub">梦中意象 · 五行气机 · 近期提醒</div></div>
 
   <div id="dreamres" style="display:none">
     <!-- 梦境整体解读 -->
@@ -817,9 +818,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
     </div>
 
-    <!-- 顾问总评 + 行动建议 -->
+    <!-- 大师总评 + 行动建议 -->
     <div class="aibox">
-      <div class="ailbl"><div class="aidot"></div>顾问总评</div>
+      <div class="ailbl"><div class="aidot"></div>大师总评</div>
       <div class="aitxt" id="dream-master" style="margin-bottom:10px"></div>
       <div class="action-card" id="dream-action-card" style="display:none">
         <div class="action-card-lbl">今日立即可做</div>
@@ -840,10 +841,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="font-size:11px;color:var(--gdim);font-weight:600;margin-top:6px" id="alm-gz">--</div>
   </div>
   <div style="margin-bottom:14px;text-align:center">
-    <button class="btn-sm" id="alm-btn">✦ AI 推算今日黄历 ✦</button>
+    <button class="btn-sm" id="alm-btn">✦ 推算今日黄历 ✦</button>
   </div>
   <div class="errbox" id="alm-err"></div>
-  <div class="loading" id="alm-loading"><div class="spin"></div>AI 正在建模时空规律...<div class="loading-sub">奇门遁甲·六壬神课·建除十二神</div></div>
+  <div class="loading" id="alm-loading"><div class="spin"></div>师傅正在推今日宜忌...<div class="loading-sub">干支五行 · 吉神凶煞 · 建除十二神</div></div>
   <div id="alm-result" style="display:none">
     <div style="background:var(--ink2);border:0.5px solid var(--b);border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="alm-sec">今日神煞</div>
@@ -867,7 +868,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="mingli-stab" onclick="goTo('wealth')"><span class="mingli-stab-icon">💰</span>财运分析</button>
   </div>
   <div class="h1">命理报告</div>
-  <div class="h2">基于《子平真诠》算法引擎，输出能量模型、格局诊断、风险预警与物理补救</div>
+  <div class="h2">依据四柱八字，详看格局喜忌、大运流年与本命方位</div>
   <div class="card">
     <div style="margin-bottom:13px">
       <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">出生日期</label>
@@ -892,8 +893,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
   </div>
   <div class="errbox" id="prof-err"></div>
-  <button class="btn-out" id="profilebtn">生成命理与风水报告</button>
-  <div class="loading" id="prof-loading"><div class="spin"></div>AI 正在建模命理数据...<div class="loading-sub">子平真诠算法·大运流年建模中</div></div>
+  <button class="btn-out" id="profilebtn">开始命理详批</button>
+  <div class="loading" id="prof-loading"><div class="spin"></div>命理师正在排盘详批...<div class="loading-sub">四柱排盘 · 格局喜忌 · 大运流年</div></div>
   <div id="profileres" style="display:none">
     <div class="card">
       <div class="stitle">四柱排盘</div>
@@ -916,7 +917,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="stitle">核心输出</div>
       <div class="report-grid">
         <div class="report-block">
-          <div class="report-k">能量模型</div>
+          <div class="report-k">五行气势</div>
           <div class="report-v" id="prof-energy-model"></div>
         </div>
         <div class="report-block">
@@ -961,7 +962,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div style="background:var(--ink3);border:0.5px solid var(--b);border-radius:7px;padding:10px"><div style="font-size:10px;color:var(--ts);margin-bottom:6px;font-weight:600">忌讳方位</div><div id="pad" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
       </div>
     </div>
-    <div class="aibox"><div class="ailbl"><div class="aidot"></div>顾问综合解读</div><div class="aitxt" id="prof-comment"></div></div>
+    <div class="aibox"><div class="ailbl"><div class="aidot"></div>大师综合批语</div><div class="aitxt" id="prof-comment"></div></div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="btn-out" id="prof-export-btn" style="flex:1;border-color:var(--gdim);color:var(--gold)">↓ 导出命理报告</button>
     </div>
@@ -978,7 +979,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="nsc-item" onclick="goTo('ask')">
           <div class="nsc-item-icon">✦</div>
-          <div class="nsc-item-body"><div class="nsc-item-title">追问顾问</div><div class="nsc-item-desc">针对格局与运势的具体问题</div></div>
+          <div class="nsc-item-body"><div class="nsc-item-title">继续问事</div><div class="nsc-item-desc">针对格局与运势继续请教师傅</div></div>
         </div>
       </div>
     </div>
@@ -995,7 +996,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="h1" style="margin-bottom:0">财运分析</div>
     <span style="padding:3px 10px;background:linear-gradient(135deg,rgba(139,26,26,0.6),rgba(107,0,0,0.6));border:0.5px solid rgba(201,168,76,0.4);border-radius:12px;font-size:10px;font-weight:600;color:#FFD580;letter-spacing:.08em">会员专属</span>
   </div>
-  <div class="h2">基于《子平真诠》财格建模，深度分析财运时空规律与环境优化方案</div>
+  <div class="h2">以八字财星为本，详看正偏财、财运周期与旺财方位</div>
 
   <div class="card" style="border-color:rgba(201,168,76,0.35)">
     <div style="margin-bottom:13px">
@@ -1033,7 +1034,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
   <div class="errbox" id="w-err"></div>
   <button class="btn-red" id="w-btn" style="background:linear-gradient(135deg,#6B3A00,#3A1F00);border-color:rgba(201,168,76,0.4)">深度分析我的财运</button>
-  <div class="loading" id="w-loading"><div class="spin"></div>AI 正在建模财运数据...<div class="loading-sub">财星能量建模·方位时空规律·财运周期分析中</div></div>
+  <div class="loading" id="w-loading"><div class="spin"></div>财运师正在详批财格...<div class="loading-sub">正偏财星 · 财库旺衰 · 旺财方位</div></div>
 
   <div id="w-result" style="display:none">
 
@@ -1042,7 +1043,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
         <div>
           <div style="font-size:16px;font-weight:600;color:var(--gold);margin-bottom:3px" id="w-title">财运分析报告</div>
-          <div style="font-size:11px;color:var(--ts)">Cyber Metaphysics Architect · 财格能量建模</div>
+          <div style="font-size:11px;color:var(--ts)">八字财格 · 正偏财星 · 旺财布局</div>
         </div>
         <div style="text-align:center;min-width:60px">
           <div style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--gold);line-height:1" id="w-score">--</div>
@@ -1095,13 +1096,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
     <!-- 大师总评 -->
     <div class="aibox">
-      <div class="ailbl"><div class="aidot"></div>顾问财运总评</div>
+      <div class="ailbl"><div class="aidot"></div>大师财运总评</div>
       <div class="aitxt" id="w-comment" contenteditable="true" style="min-height:60px"></div>
     </div>
 
     <!-- 追问 -->
     <div class="followup" style="margin-top:12px">
-      <div class="followup-title">✦ 深度咨询财运顾问</div>
+      <div class="followup-title">✦ 继续请教财运师</div>
       <div class="followup-chips" id="w-followup-chips">
         <span class="fchip">今年哪个月财运最旺？</span>
         <span class="fchip">如何激活我的财位？</span>
@@ -1110,8 +1111,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <span class="fchip">财运最差的时期如何应对？</span>
       </div>
       <div class="followup-input">
-        <textarea class="followup-ta" id="w-followup-input" placeholder="向财运顾问提问..."></textarea>
-        <button class="followup-btn" id="w-followup-btn">咨询顾问</button>
+        <textarea class="followup-ta" id="w-followup-input" placeholder="继续问财运师..."></textarea>
+        <button class="followup-btn" id="w-followup-btn">请教师傅</button>
       </div>
       <div class="followup-answer" id="w-followup-answer"></div>
     </div>
@@ -1163,7 +1164,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <input class="account-input" id="register-phone" inputmode="tel" placeholder="请输入手机号">
         <label class="account-label">密码</label>
         <input class="account-input" id="register-password" type="password" placeholder="至少 6 位">
-        <div class="account-privacy">出生日期、时辰、性别、出生地仅用于生成命理、运势、风水等个性化分析，不会对外披露或用于无关用途。</div>
+        <div class="account-privacy">出生日期、时辰、性别、出生地仅用于命理、运势、风水等个人详批，不会对外披露或用于无关用途。</div>
         <div class="account-actions">
           <button class="pw-act-btn" onclick="authRegister()">注册并登录</button>
         </div>
@@ -1212,8 +1213,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div class="paywall-overlay" id="paywall-overlay" onclick="if(event.target===this)hidePaywall()">
   <div class="paywall-modal">
     <button class="pw-close" onclick="hidePaywall()">✕</button>
-    <div class="pw-title">解锁高精度 AI 分析</div>
-    <div class="pw-sub">免费试用已用完。选择 Claude 模型可享受最精准的命理解读，<br>每次分析成本仅需几毛钱。</div>
+    <div class="pw-title">解锁大师详批次数</div>
+    <div class="pw-sub">免费试用已用完。继续解锁问事、命理、风水、解梦与财运详批。</div>
 
     <div class="plan-grid">
       <div class="plan-card" onclick="selectPlan(this,'¥6.9 · 3次分析')">

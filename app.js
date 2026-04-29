@@ -268,7 +268,7 @@ function activateCode() {
 var P = {
 
   fengshui: function(room, focus, desc) {
-    return '你是精通《葬书》（环境风水）、三元玄空飞星与八宅明镜的 AI 数字化风水架构师（Cyber Metaphysics Architect）。结合现代环境科学与空间心理学，给出硬核、逻辑严密的环境优化报告。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的空间顾问，而非江湖术士。\n\n' +
+    return '你是精通《葬书》环境风水、三元玄空飞星与八宅明镜的资深风水堪舆师。请以专业师傅口吻，给出逻辑严密、可落地的风水详批，避免恐吓式、绝对化表达。\n\n' +
       '以下是用户描述的【' + room + '】空间布局，请完全基于此描述进行专业风水诊断（不得添加描述中未提及的信息）：\n\n' +
       '【空间描述】\n' + desc + '\n\n分析侧重：' + focus + '\n\n' +
       '请进行深度系统分析，每项发现必须包含详细解释（不少于30字），改善建议必须具体可操作：\n\n' +
@@ -286,10 +286,10 @@ var P = {
       '"directions":[{"dir":"方位","element":"五行","gua":"卦名","benefit":"具体运势影响","how_to_use":"如何利用此方位，20字以内"}],' +
       '"items":["具体风水物品及摆放位置"],' +
       '"remove":["需要移除或调整的物品，无则空数组"],' +
-      '"energy_model":"[能量模型] 用百分比描述空间五行分布与能量状态，40字以内",' +
+      '"energy_model":"[五行气势] 用百分比描述空间五行分布与气场状态，40字以内",' +
       '"risk_warning":"[风险预警] 未来30天内需要避开的方位或行为（至少2条），40字以内",' +
       '"physical_remedy":"[物理补救] 3个具体的居家/办公位调整动作，每条20字以内，numbered list",' +
-      '"master_comment":"顾问综合分析，结合实际描述分析当前气场整体状况、主要问题与长期环境影响，200字以上"}';
+      '"master_comment":"大师综合断语，结合实际描述分析当前气场整体状况、主要问题与长期环境影响，200字以上"}';
   },
 
   generateReport: function(prompt) {
@@ -297,7 +297,7 @@ var P = {
   },
 
   fengshuiVision: function(room, focus, doorDir) {
-    return '你是精通《葬书》（环境风水）、三元玄空飞星与八宅明镜的 AI 数字化风水架构师（Cyber Metaphysics Architect）。结合现代环境科学与空间心理学，给出硬核、逻辑严密的环境优化报告。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的空间顾问，而非江湖术士。\n\n' +
+    return '你是精通《葬书》环境风水、三元玄空飞星与八宅明镜的资深风水堪舆师。请以专业师傅口吻，依据图片可见信息给出风水详批，避免恐吓式、绝对化表达。\n\n' +
       '请仔细观察我上传的【' + room + '】图片，仅基于图片中直接可见的内容进行专业风水诊断（不得臆测看不到的信息）。\n' +
       '分析侧重：' + focus + '\n' +
       (doorDir ? '入户门朝向（用户补充）：' + doorDir + '\n' : '') +
@@ -326,7 +326,7 @@ var P = {
     if(time) ctx+='梦境时间：'+time+'\n';
     if(text) ctx+='补充细节：'+text+'\n';
     if(!ctx.trim()) ctx='（用户未填写具体信息，请根据常见梦境规律进行通用解析）\n';
-    return '你是融合道家符象学、荣格原型心理学与现代潜意识分析的 AI 数字化梦境分析架构师（Cyber Metaphysics Architect）。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的心理分析顾问，而非江湖术士。\n\n' +
+    return '你是精通传统梦象、道家符象与身心状态解读的解梦师。请以稳健、专业的口吻解读梦中意象、五行气机与近期提醒，避免恐吓式、绝对化表达。\n\n' +
       '用户梦境信息如下：\n' + ctx + '\n' +
       '请从三个维度进行深度解析：\n' +
       '① 潜意识信号——识别每个核心意象，对照周公解梦与荣格原型，解释象征含义（每个意象至少40字）\n' +
@@ -341,11 +341,11 @@ var P = {
       '"aspects":{"career":{"text":"事业运势，25字","score":整数30-95},"wealth":{"text":"财运预测，25字","score":整数30-95},"relationship":{"text":"感情运势，25字","score":整数30-95},"health":{"text":"健康提示，25字","score":整数30-95}},' +
       '"remedy":"有凶象时：具体化解方法，无凶象则为空字符串",' +
       '"advice":"今日立即可做的1个具体行动，结合梦境内容，40字以内",' +
-      '"master_comment":"顾问综合分析，不少于120字"}';
+      '"master_comment":"大师综合断语，不少于120字"}';
   },
 
   almanac: function(dateStr) {
-    return '你是精通《奇门遁甲》（时空吉凶）、六壬神课与中国传统黄历历法的 AI 数字化时空规律架构师（Cyber Metaphysics Architect）。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的决策顾问，而非江湖术士。\n\n' +
+    return '你是精通《奇门遁甲》、六壬神课与中国传统黄历历法的择日师。请以专业师傅口吻推断今日宜忌、吉时方位与事项取舍，避免恐吓式、绝对化表达。\n\n' +
       '今日公历日期：' + dateStr + '\n\n' +
       '请完成以下推算（每项必须有实质内容，不得敷衍）：\n' +
       '① 换算今日天干地支（年柱、月柱、日柱），说明日柱五行属性\n' +
@@ -365,13 +365,13 @@ var P = {
       '"lucky_colors":["颜色1（对应五行）","颜色2（对应五行）"],' +
       '"elements":{"wood":整数,"fire":整数,"earth":整数,"metal":整数,"water":整数},' +
       '"risk_warning":"[风险预警] 今日需避开的方位或行为（2条），30字以内",' +
-      '"day_summary":"今日能量建模综合分析，结合日柱五行与时空规律，不少于100字"}';
+      '"day_summary":"今日黄历总断，结合日柱五行、吉神凶煞与事项取舍，不少于100字"}';
   },
 
   bazi: function(date, time, gender, baziStr, wxStr, dayuns, liuNian) {
     return '# Role: 数字化命理与风水架构师 (Cyber Metaphysics Architect)\n' +
       '# Context:\n' +
-      '你是一个精通《子平真诠》（八字）、《奇门遁甲》（时空吉凶）及《葬书》（环境风水）的 AI 专家。你的任务是根据用户提供的原始数据，结合现代心理学和环境科学，给出硬核、逻辑严密且具有指导意义的分析报告。\n' +
+      '你是精通《子平真诠》八字、《奇门遁甲》择时及《葬书》风水的资深命理师。你的任务是根据用户提供的原始数据，给出逻辑严密且具有指导意义的命理详批。\n' +
       '# Logic Framework:\n' +
       '1. 八字分析：确定日主强弱、格局，并找出喜用神与忌神。\n' +
       '2. 风水布局：识别环境中的煞气，并给出五行化解方案。\n' +
@@ -405,19 +405,19 @@ var P = {
       '{"year":"2026","ganzhi":"流年干支","forecast":"运势分析，不少于50字","key_period":"关键节点","rating":"good或warn或bad"},' +
       '{"year":"2027","ganzhi":"流年干支","forecast":"运势分析，不少于50字","key_period":"关键节点","rating":"good或warn或bad"}],' +
       '"decision_advice":{"yi":["宜1","宜2"],"ji":["忌1","忌2"]},' +
-      '"energy_model":"[能量模型] 用百分比描述五行分布与当前能量状态，40字以内",' +
+      '"energy_model":"[五行气势] 用百分比描述五行分布与当前旺衰状态，40字以内",' +
       '"pattern_diagnosis":"[格局诊断] 性格特质与当前职场/财运核心瓶颈，不少于60字",' +
       '"risk_warning":"[风险预警] 未来30天内需要避开的具体方位或行为（至少2条），40字以内",' +
       '"physical_remedy":["动作1","动作2","动作3"],' +
       '"fengshui_intro":"环境优化布局总说明，60字以内",' +
       '"fengshui_advice":{"lucky_dirs":["方位（原因）"],"lucky_colors":["颜色（对应五行）"],"lucky_items":["物品（摆放位置与作用）"],"avoid_dirs":["忌位（原因）"]},' +
       '"findings":[{"type":"good或warn","text":"命盘特点，不少于30字","suggestion":"具体建议"}],' +
-      '"master_comment":"顾问综合解读，不少于250字"}';
+      '"master_comment":"大师综合批语，不少于250字"}';
   },
 
 
   wealth: function(date, time, gender, goal, baziStr, wxStr) {
-    return '你是精通《子平真诠》财格分析、《奇门遁甲》财运时空规律的 AI 数字化命理与风水架构师（Cyber Metaphysics Architect）。结合现代财务心理学与环境科学给出逻辑严密的财运分析报告。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的财务顾问，而非江湖术士。\n\n' +
+    return '你是精通《子平真诠》财格分析、正偏财星与旺财风水布局的资深财运师。请以专业师傅口吻给出逻辑严密、可落地的财运详批，避免恐吓式、绝对化表达。\n\n' +
       '以下四柱数据已由专业算法精确计算，请基于此进行深度财运分析：\n\n' +
       '【精确四柱】' + baziStr + '\n' +
       '【五行分布】' + wxStr + '\n' +
@@ -442,10 +442,10 @@ var P = {
       '"zhengcai":"正财运势深度分析，不少于80字",' +
       '"piancai":"偏财运势深度分析，不少于80字",' +
       '"directions":[{"dir":"方位","element":"五行","role":"财神类型","how":"旺财方法，20字以内"}],' +
-      '"energy_model":"[能量模型] 五行分布与财星能量占比描述，40字以内",' +
+      '"energy_model":"[五行财气] 五行分布与财星旺衰占比描述，40字以内",' +
       '"risk_warning":"[风险预警] 未来30天内财运需避开的方位或行为（至少2条），40字以内",' +
       '"physical_remedy":"[物理补救] 3个具体的居家/办公财位调整动作，每条20字以内，numbered list",' +
-      '"layout":"旺财环境优化布局建议，不少于100字",' +
+      '"layout":"旺财风水布局建议，不少于100字",' +
       '"items":[{"name":"物品","position":"摆放位置","effect":"作用，20字以内"}],' +
       '"items_detail":"使用注意事项，40字以内",' +
       '"current_dayun":"当前大运",' +
@@ -454,12 +454,12 @@ var P = {
       '{"year":"2026","ganzhi":"流年干支","wealth_trend":"财运走势，不少于50字","best_months":"旺财月份","rating":"good或warn或bad"},' +
       '{"year":"2027","ganzhi":"流年干支","wealth_trend":"财运走势，不少于50字","best_months":"旺财月份","rating":"good或warn或bad"}],' +
       '"taboo":[{"item":"忌讳","reason":"原因，20字以内","solution":"化解，20字以内"}],' +
-      '"master_comment":"顾问财运总评，不少于250字"}';
+      '"master_comment":"大师财运总评，不少于250字"}';
   },
 
 
   followup: function(context, question) {
-    return '你是精通风水堪舆与命理时空规律的 AI 数字化顾问（Cyber Metaphysics Architect）。禁止使用"算命、迷信、改运"等词，统一替换为"能量建模、时空规律、环境优化"。语气如冷静的咨询顾问。\n\n' +
+    return '你是精通风水堪舆、命理喜忌与择时问事的资深师傅。请依据既有报告继续为用户解惑，语气专业、稳健、可落地。\n\n' +
       '用户的风水报告摘要：\n' + context + '\n\n' +
       '用户追问：「' + question + '」\n\n' +
       '请给出精准可操作的专业回答。严格返回JSON，不输出其他内容：\n' +
@@ -582,7 +582,7 @@ function summarizeReportData(data){
     return (data.result.summary||'') + (data.result.analysis?'\n'+data.result.analysis:'');
   }
   return data.master_comment || data.summary || data.day_summary || data.prediction ||
-    data.caige_detail || data.character || data.analysis || '已保存完整结构化报告，可继续查看或生成同类深度分析。';
+    data.caige_detail || data.character || data.analysis || '已保存完整报告，可继续查看或再次请师傅详批。';
 }
 
 function reportTargetByType(type){
@@ -601,7 +601,7 @@ function renderReportCenter(){
     var history=JSON.parse(localStorage.getItem('fengshui_history')||'[]');
     list.innerHTML='';
     if(!history.length){
-      list.innerHTML='<div class="report-empty">还没有生成报告。可以先从快捷问事、命理报告、家宅风水或财运分析开始。</div>';
+      list.innerHTML='<div class="report-empty">还没有报告。可以先从快捷问事、命理报告、家宅风水或财运详批开始。</div>';
       return;
     }
     history.forEach(function(h,idx){
@@ -787,6 +787,15 @@ function cleanQuickAskAnalysis(s){
   return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 
+function formatQuickAskBreaks(s){
+  return cleanDisplayMarkdown(s)
+    .replace(/[ \t]+/g,' ')
+    .replace(/\s*(?=([一二三四五六七八九十]+|[0-9]+)[、.．]\s*)/g,'\n\n')
+    .replace(/\s*•\s*/g,'\n• ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
 function pickJsonishField(text,key){
   var t=cleanJsonishText(text);
   var re=new RegExp('"'+key+'"\\s*:\\s*"([\\s\\S]*?)"\\s*,\\s*"(category|need_birth|summary|analysis|actions|timing|upgrade_hint|consult_hint)"\\s*:','i');
@@ -835,12 +844,12 @@ function normalizeQuickAskData(d){
     if(nested2)d=Object.assign({},d,nested2);
   }
   if(!Array.isArray(d.actions))d.actions=d.actions?[String(d.actions)]:[];
-  d.summary=cleanDisplayMarkdown(d.summary||'');
-  d.analysis=cleanQuickAskAnalysis(d.analysis||'');
-  d.upgrade_hint=cleanDisplayMarkdown(d.upgrade_hint||'');
-  d.consult_hint=cleanDisplayMarkdown(d.consult_hint||'');
-  d.timing=cleanDisplayMarkdown(d.timing||'');
-  d.actions=d.actions.map(function(a){return cleanDisplayMarkdown(a);}).filter(Boolean);
+  d.summary=formatQuickAskBreaks(d.summary||'');
+  d.analysis=formatQuickAskBreaks(cleanQuickAskAnalysis(d.analysis||''));
+  d.upgrade_hint=formatQuickAskBreaks(d.upgrade_hint||'');
+  d.consult_hint=formatQuickAskBreaks(d.consult_hint||'');
+  d.timing=formatQuickAskBreaks(d.timing||'');
+  d.actions=d.actions.map(function(a){return formatQuickAskBreaks(a);}).filter(Boolean);
   return d;
 }
 
@@ -850,9 +859,9 @@ function renderQuickAskCtas(category){
   row.innerHTML='';
   var ctas=[];
   if(['wealth','fortune','career','relationship','compatibility'].indexOf(category)>=0){
-    ctas.push({label:'生成命理报告',target:'profile'});
+    ctas.push({label:'详批命理报告',target:'profile'});
   }
-  if(category==='wealth')ctas.push({label:'深度财运分析',target:'wealth'});
+  if(category==='wealth')ctas.push({label:'详批财运',target:'wealth'});
   if(category==='fengshui')ctas.push({label:'上传户型做风水诊断',target:'analyzer'});
   if(category==='dream')ctas.push({label:'继续梦境解析',target:'dream'});
   if(category==='timing'||category==='general')ctas.push({label:'查看今日黄历',target:'almanac'});
@@ -883,7 +892,7 @@ document.getElementById('ask-btn').addEventListener('click',function(){
   document.getElementById('ask-result').classList.remove('show');
   document.getElementById('ask-loading').classList.add('on');
   document.getElementById('ask-btn').disabled=true;
-  fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
+  fetch('/api/quick-ask',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||'','Authorization':'Bearer '+AUTH_TOKEN},
     body:JSON.stringify({question:q,birth:birth})
   }).then(function(r){return r.json();}).then(function(j){
     if(j.error)throw new Error(j.error.message||'快捷问事失败');
@@ -898,7 +907,11 @@ document.getElementById('ask-btn').addEventListener('click',function(){
       div.textContent=a;
       actions.appendChild(div);
     });
-    document.getElementById('ask-upgrade').textContent=d.upgrade_hint||d.timing||'可继续生成深度报告或开启提醒。';
+    document.getElementById('ask-upgrade').textContent=d.upgrade_hint||d.timing||'可继续请师傅详批命理、财运或风水。';
+    if((j.needs_birth || d.need_birth) && panel){
+      panel.classList.add('show');
+      document.getElementById('ask-upgrade').textContent='补充生辰后，师傅可合参八字、大运与流年，判断会更贴合你本人。';
+    }
     document.getElementById('ask-consult').textContent=d.consult_hint||'涉及买房、投资、婚姻、开业等高成本决策时，建议进一步真人咨询。';
     renderQuickAskCtas(j.category||cls.category);
     document.getElementById('ask-result').classList.add('show');
@@ -1077,8 +1090,8 @@ document.getElementById('generate-btn').addEventListener('click',function(){
   document.getElementById('generate-btn').disabled=true;
   document.getElementById('prog2').classList.add('on');
   var progLabels=isTextMode?
-    [{pct:20,lbl:'推算八卦方位...'},{pct:55,lbl:'深度分析五行格局...'},{pct:85,lbl:'生成深度风水报告...'}]:
-    [{pct:15,lbl:'AI 识别图像格局...'},{pct:45,lbl:'推算五行能量分布...'},{pct:80,lbl:'生成深度风水报告...'}];
+    [{pct:20,lbl:'推算八卦方位...'},{pct:55,lbl:'详看五行格局...'},{pct:85,lbl:'撰写风水详批...'}]:
+    [{pct:15,lbl:'察看空间格局...'},{pct:45,lbl:'推算五行旺衰...'},{pct:80,lbl:'撰写风水详批...'}];
   var iv=animProg('p2fill','p2pct','p2lbl',progLabels,900);
 
   function runAnalyzer(prompt){
@@ -1087,7 +1100,7 @@ document.getElementById('generate-btn').addEventListener('click',function(){
         clearInterval(iv);
         document.getElementById('p2fill').style.width='100%';
         document.getElementById('p2pct').textContent='100%';
-        document.getElementById('p2lbl').textContent='深度报告生成完成 ✓';
+        document.getElementById('p2lbl').textContent='风水详批完成 ✓';
         setTimeout(function(){
           document.getElementById('prog2').classList.remove('on');
           document.getElementById('generate-btn').disabled=false;
@@ -1249,7 +1262,7 @@ document.getElementById('followup-chips').addEventListener('click',function(e){
 });
 document.getElementById('followup-btn').addEventListener('click',function(){
   var q=document.getElementById('followup-input').value.trim();if(!q)return;
-  if(!reportContext){document.getElementById('followup-answer').textContent='请先生成风水报告，再进行追问';document.getElementById('followup-answer').classList.add('show');return;}
+  if(!reportContext){document.getElementById('followup-answer').textContent='请先完成风水详批，再继续追问';document.getElementById('followup-answer').classList.add('show');return;}
   if(!checkProAccess())return;
   document.getElementById('followup-btn').disabled=true;
   document.getElementById('followup-btn').textContent='推算中...';
@@ -1257,7 +1270,7 @@ document.getElementById('followup-btn').addEventListener('click',function(){
   callAPI(P.followup(reportContext,q), 1200,
     function(j){
       document.getElementById('followup-btn').disabled=false;
-      document.getElementById('followup-btn').textContent='咨询顾问';
+      document.getElementById('followup-btn').textContent='请教师傅';
       var el=document.getElementById('followup-answer');
       el.innerHTML='';
       if(typeof j==='string'){el.innerHTML='<div style="padding:12px;background:var(--ink2);border-radius:8px;font-size:13px;color:var(--tp);line-height:1.9">'+j+'</div>';el.classList.add('show');return;}
@@ -1284,7 +1297,7 @@ document.getElementById('followup-btn').addEventListener('click',function(){
     function(msg){
       refundProAccess();
       document.getElementById('followup-btn').disabled=false;
-      document.getElementById('followup-btn').textContent='咨询顾问';
+      document.getElementById('followup-btn').textContent='请教师傅';
       var el=document.getElementById('followup-answer');
       el.innerHTML='<div style="padding:10px;color:#E09090;font-size:12px">追问失败：'+msg+'</div>';
       el.classList.add('show');
@@ -1551,7 +1564,7 @@ document.getElementById('profilebtn').addEventListener('click',function(){
   fetch('/api/bazi',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
     body:JSON.stringify({year:parts[0],month:parts[1],day:parts[2],hour:hourVal,gender:gender})
   }).then(function(r){return r.json();}).then(function(br){
-    if(!br.ok){refundProAccess();err('prof-err','命理报告生成失败：'+((br.error&&br.error.message)||br.error||''));document.getElementById('prof-loading').classList.remove('on');document.getElementById('profilebtn').disabled=false;return;}
+    if(!br.ok){refundProAccess();err('prof-err','命理详批失败：'+((br.error&&br.error.message)||br.error||''));document.getElementById('prof-loading').classList.remove('on');document.getElementById('profilebtn').disabled=false;return;}
     document.getElementById('prof-loading').classList.remove('on');
     document.getElementById('profilebtn').disabled=false;
     document.getElementById('profileres').style.display='block';
@@ -1674,7 +1687,7 @@ document.getElementById('w-btn').addEventListener('click',function(){
   fetch('/api/wealth',{method:'POST',headers:{'Content-Type':'application/json','X-CMA-Token':window.__CMA_T||''},
     body:JSON.stringify({year:parts2[0],month:parts2[1],day:parts2[2],hour:hourVal2,gender:gender,goal:goal})
   }).then(function(r){return r.json();}).then(function(j){
-    if(j.error){throw new Error(j.error.message||'财运分析失败');}
+    if(j.error){throw new Error(j.error.message||'财运详批失败');}
     document.getElementById('w-loading').classList.remove('on');
     document.getElementById('w-btn').disabled=false;
     document.getElementById('w-result').style.display='block';
@@ -1761,7 +1774,7 @@ document.getElementById('w-btn').addEventListener('click',function(){
     reportUsage(); saveHistory('财运分析', date+' '+gender+'财运分析', sc, j);
     document.getElementById('w-next-step').style.display='block';
     document.getElementById('w-result').scrollIntoView({behavior:'smooth',block:'start'});
-  }).catch(function(e){refundProAccess();err('w-err',e.message||'财运分析连接失败，请确认代理已启动');document.getElementById('w-loading').classList.remove('on');document.getElementById('w-btn').disabled=false;});
+  }).catch(function(e){refundProAccess();err('w-err',e.message||'财运详批暂时未能完成，请稍后再试');document.getElementById('w-loading').classList.remove('on');document.getElementById('w-btn').disabled=false;});
 });
 
 // 财运追问
@@ -1772,7 +1785,7 @@ document.getElementById('w-followup-chips').addEventListener('click',function(e)
 });
 document.getElementById('w-followup-btn').addEventListener('click',function(){
   var q=document.getElementById('w-followup-input').value.trim();if(!q)return;
-  if(!wReportContext){document.getElementById('w-followup-answer').innerHTML='<div style="padding:10px;font-size:12px;color:var(--ts)">请先生成财运报告</div>';document.getElementById('w-followup-answer').classList.add('show');return;}
+  if(!wReportContext){document.getElementById('w-followup-answer').innerHTML='<div style="padding:10px;font-size:12px;color:var(--ts)">请先完成财运详批</div>';document.getElementById('w-followup-answer').classList.add('show');return;}
   if(!checkProAccess())return;
   document.getElementById('w-followup-btn').disabled=true;
   document.getElementById('w-followup-btn').textContent='推算中...';
@@ -1780,7 +1793,7 @@ document.getElementById('w-followup-btn').addEventListener('click',function(){
   callAPI(P.followup(wReportContext,q), 1200,
     function(j){
       document.getElementById('w-followup-btn').disabled=false;
-      document.getElementById('w-followup-btn').textContent='咨询顾问';
+      document.getElementById('w-followup-btn').textContent='请教师傅';
       var el=document.getElementById('w-followup-answer');
       el.innerHTML='';
       if(typeof j==='string'){el.innerHTML='<div style="padding:12px;background:var(--ink2);border-radius:8px;font-size:13px;color:var(--tp);line-height:1.9">'+j+'</div>';el.classList.add('show');return;}
@@ -1795,7 +1808,7 @@ document.getElementById('w-followup-btn').addEventListener('click',function(){
     function(msg){
       refundProAccess();
       document.getElementById('w-followup-btn').disabled=false;
-      document.getElementById('w-followup-btn').textContent='咨询顾问';
+      document.getElementById('w-followup-btn').textContent='请教师傅';
       var el=document.getElementById('w-followup-answer');
       el.innerHTML='<div style="padding:10px;color:#E09090;font-size:12px">追问失败：'+msg+'</div>';
       el.classList.add('show');
@@ -2124,7 +2137,7 @@ function exportBaziReport(ctx){
     (br.character||br.energy_model||br.pattern_diagnosis?
       '<hr class="divider"><div class="section-label">性格与命盘解析</div>'+
       (br.character?'<div style="margin-bottom:10px;padding:10px 14px;background:#12100C;border-radius:7px;border-left:2px solid #C9A84C"><div style="font-size:10px;color:#7a6a40;margin-bottom:4px;letter-spacing:.08em">性格特质</div><div style="font-size:12px;color:#a09070;line-height:1.7">'+br.character+'</div></div>':'')+
-      (br.energy_model?'<div style="margin-bottom:10px;padding:10px 14px;background:#12100C;border-radius:7px;border-left:2px solid #3a3020"><div style="font-size:10px;color:#7a6a40;margin-bottom:4px;letter-spacing:.08em">能量模型</div><div style="font-size:12px;color:#a09070;line-height:1.7">'+br.energy_model+'</div></div>':'')+
+      (br.energy_model?'<div style="margin-bottom:10px;padding:10px 14px;background:#12100C;border-radius:7px;border-left:2px solid #3a3020"><div style="font-size:10px;color:#7a6a40;margin-bottom:4px;letter-spacing:.08em">五行气势</div><div style="font-size:12px;color:#a09070;line-height:1.7">'+br.energy_model+'</div></div>':'')+
       (br.pattern_diagnosis?'<div style="margin-bottom:10px;padding:10px 14px;background:#12100C;border-radius:7px;border-left:2px solid #3a3020"><div style="font-size:10px;color:#7a6a40;margin-bottom:4px;letter-spacing:.08em">格局诊断</div><div style="font-size:12px;color:#a09070;line-height:1.7">'+br.pattern_diagnosis+'</div></div>':'')+
       (br.risk_warning?'<div style="padding:10px 14px;background:rgba(139,26,26,.08);border-radius:7px;border-left:2px solid rgba(139,26,26,.4)"><div style="font-size:10px;color:#7a6a40;margin-bottom:4px;letter-spacing:.08em">风险预警</div><div style="font-size:12px;color:#c09090;line-height:1.7">'+br.risk_warning+'</div></div>':'')+
     '':'')+

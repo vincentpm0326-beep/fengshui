@@ -44,23 +44,31 @@ const DEFAULT_MODEL_SETTINGS = {
 const DEFAULT_PROMPTS = [
   {
     key: 'quick_ask_general',
-    name: '快捷问事·通用决策',
+    name: '快捷问事·通用问事',
     module: '快捷问事',
-    description: '固定用于快捷问事入口；不自动切换命理 Prompt，命理深度分析由命理/财运专属模块承接。',
+    description: '固定用于快捷问事入口；有生辰则结合八字合参，无生辰则按问事、时机、事项象意判断。',
     content:
-`你是“国学决策助手”的高级顾问，融合黄历择日、风水环境、梦境象征与现代决策建议。
-请基于用户问题给出稳健、克制、可执行的建议。不要承诺绝对结果，不制造恐慌。
+`你是资深命理问事师，精通八字命理、流年大运、黄历择日、风水象意与民俗问事。
+请基于用户问题给出有判断感、克制、可落地的问事结论。不要承诺绝对结果，不制造恐慌。
 
 当前日期：{{current_date}}
 问题类型：{{category_label}}
 用户问题：{{question}}
 
-如果问题涉及个人长期运势，请先给出通用判断，并自然提示可前往命理报告、财运分析等专属模块做深度分析。
-输出要像“决策建议卡片”，不要像聊天机器人继续追问；不要写“你可以继续告诉我/我可以为你”等无法在当前页面承接的互动话术。
-必须包含：1）明确结论；2）判断依据；3）今天/近期能直接执行的动作；4）适合跳转的下一步服务。
+【用户生辰资料】
+{{birth_context}}
+
+【八字命理上下文】
+{{bazi_context}}
+
+判断规则：
+1. 如果已提供生辰资料，必须结合四柱、日主、五行喜忌、大运/流年与本次事项合参，但不要把八字写成冗长排盘。
+2. 如果没有生辰资料，按本次事项、当前日期、时机、象意、风水/黄历/民俗经验进行问事占断，并自然提示“补充生辰后可合参八字”。
+3. 快捷问事只断本次事项：要给成败倾向、阻滞点、应期或观察窗口、取法建议。
+4. 不要写聊天式追问，不要写“我可以继续为你”，不要只给现代职场/生活建议。
 
 严格返回JSON，不输出其他内容：
-{"category":"{{category}}","need_birth":false,"summary":"明确结论，30字以内","analysis":"先给结论依据，再说明风险边界，160-220字，不能空泛","actions":["今天/近期可执行动作1，具体到行为","可执行动作2，具体到检查项或时间","可执行动作3，具体到规避事项"],"upgrade_hint":"下一步可点击的专题服务，如命理报告/今日黄历/风水诊断/梦境解析/报告中心，50字以内","consult_hint":"仅在高成本决策场景建议真人咨询，40字以内"}`
+{"category":"{{category}}","need_birth":false,"summary":"明确结论，30字以内","analysis":"从问事/命理/时机角度说明判断依据，180-260字，必须落到用户问题","actions":["取法建议1，具体可做","阻滞或风险2，具体到避开什么","应期或观察窗口3，具体到近期时间"],"timing":"近期应期、吉凶转折或观察窗口，60字以内","upgrade_hint":"下一步可点击的专题服务，如命理报告/今日黄历/风水诊断/梦境解析/报告中心，50字以内","consult_hint":"仅在高成本决策场景建议真人咨询，40字以内"}`
   },
   {
     key: 'quick_ask_bazi',
@@ -418,6 +426,15 @@ function requireUser(req, res, next){
   req.users = users;
   req.user = user;
   next();
+}
+
+function optionalUserFromAuth(req){
+  const auth = String(req.headers.authorization || '');
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const payload = readToken(token);
+  if(!payload || !payload.uid) return null;
+  const user = loadUsers().find(u => u.id === payload.uid);
+  return user || null;
 }
 
 app.post('/api/auth/register',(req,res)=>{
@@ -854,12 +871,17 @@ function buildBaziContext(birth){
   };
 }
 
+function completeBirthProfile(birth){
+  const safe = sanitizeProfile(birth);
+  return !!safe.date;
+}
+
 function hasModelKey(config){
   const provider = typeof config === 'object' ? config.provider : (config === 'groq' ? 'groq' : 'openrouter');
   return !!providerKey(provider);
 }
 
-function buildQuickAskFallback(question, cls, hasBirth){
+function buildQuickAskFallback(question, cls, hasBirth, baziInfo){
   const q = String(question || '');
   const isInterview = /面试|offer|录取|hr|HR|复试|终面/.test(q);
   const todayLabel = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
@@ -920,20 +942,22 @@ function buildQuickAskFallback(question, cls, hasBirth){
     '应期：未来3到7个工作日看第一次回音；若无回音，再礼貌跟进一次。'
   ] : (commonActions[cls.category] || commonActions.general);
   const base = direct[cls.category] || direct.general;
+  const birthPrefix = hasBirth && baziInfo ? `合参你的生辰与命盘气势来看，${base.analysis}` : base.analysis;
   return {
     category: cls.category,
-    need_birth: false,
+    need_birth: !hasBirth && cls.birth === 'required',
     summary: base.summary,
-    analysis: base.analysis,
+    analysis: birthPrefix,
     actions,
     timing: isInterview ? '应期看3到7个工作日；先有回音，再看录取或下一轮。' : (cls.category === 'timing' ? `以${todayLabel}为问事日，轻事可小动，重事宜再择稳时。` : ''),
-    upgrade_hint: cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '可进入命理报告、财运分析或真人咨询做专属承接。',
+    upgrade_hint: hasBirth ? '已合参生辰；可进入命理报告或财运详批查看更完整命局。' : (cls.birth === 'none' ? '可继续进入对应专题做深度分析。' : '补充生辰后，可合参八字、大运与流年做更贴身的判断。'),
     consult_hint: cls.category === 'career' ? '若涉及异地、薪资大幅变化或是否离职，可进一步真人咨询。' : '涉及买房、投资、婚姻、开业等高成本决策时，建议真人咨询。',
     fallback: true
   };
 }
 
-function buildQuickAskRuntimeContext(question, cls){
+function buildQuickAskRuntimeContext(question, cls, baziInfo){
+  const hasBirth = !!(baziInfo && baziInfo.birthContext);
   return `【本次用户问题】
 ${question}
 
@@ -943,12 +967,21 @@ ${cls.label}（${cls.category}）
 【当前日期】
 ${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 
+【是否已提供生辰】
+${hasBirth ? '已提供，必须结合下方八字上下文进行合参。' : '未提供，只按本次事项、时机与象意占断；如涉及长期运势，可提示补充生辰后更贴合个人命局。'}
+
+【生辰资料】
+${hasBirth ? baziInfo.birthContext : '未提供'}
+
+【八字命理上下文】
+${hasBirth ? baziInfo.baziContext : '未提供'}
+
 【本次输出要求】
 1. 必须直接回答“本次用户问题”，不要泛泛复述模板。
 2. 不要写旁白、开场白、角色自述、分析计划，例如“下面我将”“作为顾问”“我会从几个方面”。
-3. 如果后台 Prompt 规定了固定结构，请严格按该结构输出最终内容。
+3. 无论后台 Prompt 如何配置，最终都必须严格返回 JSON 对象，不要返回 Markdown 标题或自然段结构。
 4. 输出要有国学问事/算事的判断感：成败倾向、事象、阻滞点、应期、取法；不要只给现代职场/生活建议。
-5. 快捷问事固定使用通用问事逻辑，不在这里展开八字命理；如需命理深度分析，只在结果中自然引导去命理报告/财运分析等专属模块。
+5. 如果已提供生辰，必须把八字命理作为判断依据之一；如果未提供生辰，不要假造出生信息。
 6. 不要输出与用户问题无关的说明。`;
 }
 
@@ -989,35 +1022,43 @@ app.post('/api/quick-ask', requireToken, async(req,res)=>{
     if(!question) return res.status(400).json({ error: { message: '请先输入要问的事情' } });
 
     const cls = classifyQuestion(question);
+    const authUser = optionalUserFromAuth(req);
+    const rawBirth = req.body.birth || authUser?.profile || null;
+    const birth = rawBirth ? sanitizeProfile(rawBirth) : null;
+    const hasBirth = completeBirthProfile(birth);
+    const baziInfo = hasBirth ? buildBaziContext(birth) : null;
     const promptTpl = getPrompt('quick_ask_general');
     const vars = {
       current_date: new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }),
       question,
       category: cls.category,
       category_label: cls.label,
-      birth_context: '',
-      bazi_context: ''
+      birth_context: baziInfo ? baziInfo.birthContext : '未提供生辰资料',
+      bazi_context: baziInfo ? baziInfo.baziContext : '未提供八字命理上下文'
     };
     const prompt = renderTemplate(promptTpl?.content, vars);
-    const runtimeContext = buildQuickAskRuntimeContext(question, cls);
+    const promptGuard = `\n\n【快捷问事硬性输出规则】\n1. 本接口最终只接受 JSON 对象，禁止输出 Markdown 标题、编号正文、代码块或额外说明。\n2. 有生辰时必须合参八字；无生辰时不要假造八字，只按问事象意与时机判断。\n3. JSON 字段固定为 category、need_birth、summary、analysis、actions、timing、upgrade_hint、consult_hint。`;
+    const runtimeContext = buildQuickAskRuntimeContext(question, cls, baziInfo);
     let model = modelConfigFor('quick_ask', req.body.allow_model_override ? req.body.selected_model : null);
     if(!hasModelKey(model) && hasModelKey({provider:'groq',model:'llama-3.3-70b-versatile'})) model = {provider:'groq',model:'llama-3.3-70b-versatile'};
     if(!hasModelKey(model)){
       return res.json({
         ok:true,
-        needs_birth:false,
+        needs_birth:!hasBirth && cls.birth === 'required',
         category:cls.category,
         category_label:cls.label,
-        data:buildQuickAskFallback(question, cls, false),
+        data:buildQuickAskFallback(question, cls, hasBirth, baziInfo),
         warning:'模型 API Key 未配置，已返回本地基础版结果。'
       });
     }
     const text = await callLLM([
-      { role:'system', content: prompt },
+      { role:'system', content: prompt + promptGuard },
       { role:'user', content: runtimeContext }
     ], 2500, model);
     const data = normalizeQuickAskResult(null, text);
-    res.json({ ok:true, needs_birth:false, category:cls.category, category_label:cls.label, data });
+    if(!hasBirth && cls.birth === 'required') data.need_birth = true;
+    if(hasBirth) data.need_birth = false;
+    res.json({ ok:true, needs_birth:!hasBirth && cls.birth === 'required', has_birth:hasBirth, category:cls.category, category_label:cls.label, data });
   }catch(e){
     res.status(500).json({ error: { message: '快捷问事服务暂时不可用，请稍后重试' } });
   }
