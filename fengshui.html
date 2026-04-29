@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+if(location.protocol==='file:'){
+  location.replace('http://localhost:3366/fengshui.html');
+}
+</script>
 <title>Cyber Metaphysics Architect</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -287,6 +292,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .history-item-title{font-size:12px;color:var(--navy);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .history-item-meta{font-size:10px;color:var(--td);margin-top:2px}
 .history-item-score{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);font-weight:600;flex-shrink:0}
+.report-center-list{display:grid;gap:10px}
+.report-empty{padding:28px 18px;text-align:center;background:var(--ink2);border:1px solid var(--b);border-radius:12px;color:var(--ts);font-size:13px;line-height:1.8}
+.report-center-item{background:var(--ink2);border:1px solid var(--b);border-radius:12px;padding:13px;box-shadow:0 1px 8px rgba(139,100,16,.04)}
+.report-center-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.report-center-title{font-size:14px;color:var(--navy);font-weight:700;margin-bottom:3px}
+.report-center-meta{font-size:10px;color:var(--td)}
+.report-center-score{font-family:'Cinzel',serif;color:var(--gold);font-size:18px;font-weight:700;line-height:1}
+.report-center-summary{font-size:12px;color:var(--ts);line-height:1.7;background:var(--ink3);border-radius:7px;padding:10px;margin-top:8px;white-space:pre-wrap}
+.report-center-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ask-cta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.ask-cta{padding:8px 12px;border:1px solid var(--b);background:var(--ink3);border-radius:7px;color:var(--navy);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.ask-cta:hover{border-color:rgba(30,45,94,.28);background:rgba(30,45,94,.05)}
 /* 模型选择器 */
 .model-selector{display:flex;align-items:center;gap:6px}
 .model-label{font-size:10px;color:var(--ts);letter-spacing:.08em;white-space:nowrap}
@@ -318,6 +335,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .pw-act-btn:hover{background:var(--navy2)}
 .pw-msg{font-size:12px;min-height:18px;line-height:1.5}
 .pw-footer{font-size:11px;color:var(--td);margin-top:14px;text-align:center;line-height:1.6}
+.ask-samples{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ask-sample{padding:6px 11px;background:var(--ink3);border:0.5px solid var(--b);border-radius:20px;font-size:11px;color:var(--ts);cursor:pointer;transition:all .18s}
+.ask-sample:hover{border-color:var(--navy);color:var(--navy);background:rgba(30,45,94,0.05)}
+.birth-panel{display:none;margin-top:12px;padding:13px;background:rgba(30,45,94,.04);border:0.5px solid rgba(30,45,94,.14);border-radius:9px}
+.birth-panel.show{display:block}
+.birth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ask-result{display:none;margin-top:16px}
+.ask-result.show{display:block}
+.ask-summary{font-size:15px;color:var(--navy);font-weight:700;margin-bottom:8px}
+.ask-tag{display:inline-block;padding:3px 9px;border-radius:12px;background:rgba(201,168,76,.12);color:var(--gold);font-size:10px;margin-bottom:10px}
+.ask-actions{display:grid;gap:8px;margin-top:12px}
+.ask-action{padding:9px 11px;background:var(--ink3);border-left:2px solid rgba(201,168,76,.55);border-radius:6px;font-size:12px;color:var(--ts);line-height:1.6}
+@media(max-width:560px){.birth-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -339,11 +369,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-p="home">首页</button>
+    <button class="tab" data-p="ask">问事</button>
     <button class="tab" data-p="analyzer">空间分析</button>
     <button class="tab" data-p="dream">解梦</button>
     <button class="tab" data-p="almanac">黄历</button>
     <button class="tab" data-p="profile">命盘</button>
     <button class="tab" data-p="wealth">财运</button>
+    <button class="tab" data-p="reports">报告</button>
   </div>
   <span id="credits-badge" onclick="showPaywall()" style="cursor:pointer"></span>
 </nav>
@@ -365,12 +397,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
   </div>
   <div class="mods" id="mods">
+    <div class="mod feat" data-goto="ask"><div class="mbadge">NEW</div><div class="mod-icon">✦</div><div class="mod-name">快捷问事</div><div class="mod-desc">先问问题，再判断是否需八字</div></div>
     <div class="mod feat" data-goto="analyzer"><div class="mbadge">AI</div><div class="mod-icon">🏠</div><div class="mod-name">空间分析</div><div class="mod-desc">环境优化与煞气识别</div></div>
     <div class="mod" data-goto="dream"><div class="mod-icon">🌙</div><div class="mod-name">周公解梦</div><div class="mod-desc">三层深度解析梦境</div></div>
     <div class="mod" data-goto="almanac"><div class="mod-icon">📅</div><div class="mod-name">每日黄历</div><div class="mod-desc">奇门遁甲推算吉凶</div></div>
     <div class="mod" data-goto="profile"><div class="mod-icon">☰</div><div class="mod-name">命理报告</div><div class="mod-desc">四柱建模与决策建议</div></div>
     <div class="mod feat" data-goto="wealth"><div class="mbadge" style="background:linear-gradient(135deg,#8B1A1A,#6B0000);color:#FFD580">会员</div><div class="mod-icon">💰</div><div class="mod-name">财运分析</div><div class="mod-desc">八字财格，旺财布局</div></div>
-    <div class="mod"><div class="mbadge">即将</div><div class="mod-icon">💍</div><div class="mod-name">择吉日</div><div class="mod-desc">婚嫁开业推算</div></div>
+    <div class="mod" data-goto="reports"><div class="mod-icon">▣</div><div class="mod-name">报告中心</div><div class="mod-desc">沉淀已生成分析</div></div>
   </div>
   <!-- 历史记录 -->
   <div class="history-section" id="home-history" style="display:none">
@@ -379,6 +412,82 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="btn-ghost" id="clear-history-btn">清除记录</button>
     </div>
     <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<!-- ═══ 报告中心 ═══ -->
+<div class="page" id="page-reports">
+  <div class="h1">报告中心</div>
+  <div class="h2">保存你的问事、命理、风水、解梦和财运分析记录</div>
+  <div class="card">
+    <div class="history-title">
+      <span>已生成报告</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" id="refresh-reports-btn">刷新</button>
+        <button class="btn-ghost" id="clear-reports-btn">清空</button>
+      </div>
+    </div>
+    <div class="report-center-list" id="report-center-list"></div>
+  </div>
+</div>
+
+<!-- ═══ 快捷问事 ═══ -->
+<div class="page" id="page-ask">
+  <div class="h1">快捷问事</div>
+  <div class="h2">先说清楚你遇到的事，系统会判断是否需要结合生辰八字</div>
+  <div class="card">
+    <label style="font-size:11px;color:var(--ts);font-weight:600;display:block;margin-bottom:6px">你想问什么</label>
+    <textarea class="form-ta" id="ask-question" rows="5" placeholder="例如：今天适合签合同吗？最近总是不顺是什么原因？今年财运怎么样？这个房子能买吗？梦到蛇是什么意思？"></textarea>
+    <div class="ask-samples" id="ask-samples">
+      <span class="ask-sample">今天适合签合同吗？</span>
+      <span class="ask-sample">最近总是不顺是什么原因？</span>
+      <span class="ask-sample">今年财运怎么样？</span>
+      <span class="ask-sample">这个房子风水好吗？</span>
+      <span class="ask-sample">梦到蛇是什么意思？</span>
+    </div>
+    <div class="birth-panel" id="ask-birth-panel">
+      <div style="font-size:12px;color:var(--navy);font-weight:700;margin-bottom:8px">补充出生信息后可进行个人命理增强分析</div>
+      <div class="birth-grid">
+        <div>
+          <label style="font-size:10px;color:var(--ts);display:block;margin-bottom:5px">出生日期</label>
+          <input type="date" id="ask-bday" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--ts);display:block;margin-bottom:5px">出生时辰</label>
+          <select id="ask-bhour" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+            <option value="">不详</option>
+            <option value="0">子时 23:00-01:00</option><option value="2">丑时 01:00-03:00</option><option value="4">寅时 03:00-05:00</option>
+            <option value="6">卯时 05:00-07:00</option><option value="8">辰时 07:00-09:00</option><option value="10">巳时 09:00-11:00</option>
+            <option value="12">午时 11:00-13:00</option><option value="14">未时 13:00-15:00</option><option value="16">申时 15:00-17:00</option>
+            <option value="18">酉时 17:00-19:00</option><option value="20">戌时 19:00-21:00</option><option value="22">亥时 21:00-23:00</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--ts);display:block;margin-bottom:5px">性别</label>
+          <select id="ask-gender" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none"><option>男</option><option>女</option></select>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--ts);display:block;margin-bottom:5px">出生地（可选）</label>
+          <input id="ask-birthplace" placeholder="如：上海" style="width:100%;background:var(--ink3);border:0.5px solid var(--b);border-radius:6px;padding:9px 12px;color:var(--tp);font-size:13px;font-family:inherit;outline:none">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="errbox" id="ask-err"></div>
+  <button class="btn-out" id="ask-btn">开始问事</button>
+  <div class="loading" id="ask-loading"><div class="spin"></div>AI 正在判断问题类型...<div class="loading-sub">问事分类 · 资料校验 · 专业 Prompt 调用</div></div>
+  <div class="ask-result" id="ask-result">
+    <div class="card">
+      <div class="ask-tag" id="ask-category"></div>
+      <div class="ask-summary" id="ask-summary"></div>
+      <div class="aitxt" id="ask-analysis"></div>
+      <div class="ask-actions" id="ask-actions"></div>
+      <div class="report-grid" style="margin-top:12px">
+        <div class="report-block"><div class="report-k">进阶建议</div><div class="report-v" id="ask-upgrade"></div></div>
+        <div class="report-block"><div class="report-k">真人咨询</div><div class="report-v" id="ask-consult"></div></div>
+      </div>
+      <div class="ask-cta-row" id="ask-cta-row"></div>
+    </div>
   </div>
 </div>
 
