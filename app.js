@@ -166,6 +166,7 @@ function authMe(){
     CURRENT_USER = d.user;
     if(CURRENT_USER.profile) applyProfileToForms(CURRENT_USER.profile);
     updateAccountUI();
+    updateDailyRetention();
   }).catch(function(){
     AUTH_TOKEN=''; CURRENT_USER=null; localStorage.removeItem('cma_auth_token'); updateAccountUI();
   });
@@ -181,6 +182,7 @@ function saveAccountProfile(){
       CURRENT_USER = d.user;
       applyProfileToForms(CURRENT_USER.profile);
       updateAccountUI();
+      updateDailyRetention();
       accountMsg('已保存，后续问事会自动带入资料。', true);
     }).catch(function(e){ accountMsg(e.message || '保存失败'); });
 }
@@ -557,11 +559,12 @@ function arrify(v){
 function saveHistory(type, title, score, data) {
   try {
     var history = JSON.parse(localStorage.getItem('fengshui_history') || '[]');
-    history.unshift({type:type, title:title, score:score, data:data, time:new Date().toLocaleString('zh')});
+    history.unshift({id:'r_'+Date.now()+'_'+Math.random().toString(16).slice(2), type:type, title:title, score:score, data:data, time:new Date().toLocaleString('zh'), createdAt:new Date().toISOString()});
     if(history.length > 30) history = history.slice(0, 30);
     localStorage.setItem('fengshui_history', JSON.stringify(history));
     renderHistory();
     renderReportCenter();
+    updateDailyRetention();
   } catch(e){}
 }
 
@@ -603,6 +606,131 @@ function reportTargetByType(type){
   return 'ask';
 }
 
+function loadReminders(){
+  try{
+    var list=JSON.parse(localStorage.getItem('fengshui_reminders')||'[]');
+    return Array.isArray(list)?list:[];
+  }catch(e){return [];}
+}
+
+function saveReminders(list){
+  localStorage.setItem('fengshui_reminders', JSON.stringify(list.slice(0,80)));
+  renderReminders();
+  updateDailyRetention();
+}
+
+function dateOffset(days){
+  var d=new Date();
+  d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+
+function reminderDelayByType(type){
+  type=String(type||'');
+  if(type.indexOf('快捷')>=0)return 3;
+  if(type.indexOf('黄历')>=0)return 1;
+  if(type.indexOf('解梦')>=0)return 3;
+  if(type.indexOf('风水')>=0)return 7;
+  if(type.indexOf('财运')>=0)return 14;
+  if(type.indexOf('命理')>=0)return 30;
+  return 7;
+}
+
+function reminderTitleForReport(h){
+  var type=h.type||'报告';
+  if(type.indexOf('快捷')>=0)return '跟进：'+(h.title||'这件问事');
+  if(type.indexOf('黄历')>=0)return '明日再看宜忌';
+  if(type.indexOf('解梦')>=0)return '复盘梦境提醒';
+  if(type.indexOf('风水')>=0)return '检查风水调整进度';
+  if(type.indexOf('财运')>=0)return '复盘近期财运节点';
+  if(type.indexOf('命理')>=0)return '查看本月命理提醒';
+  return '复盘：'+(h.title||type);
+}
+
+function addReminder(title, type, dueDate, note, sourceId){
+  var list=loadReminders();
+  var exists=list.some(function(r){return r.sourceId===sourceId && r.title===title && r.status!=='done';});
+  if(exists){alert('这个提醒已经添加过了');return;}
+  list.unshift({
+    id:'m_'+Date.now()+'_'+Math.random().toString(16).slice(2),
+    title:title,
+    type:type||'事项提醒',
+    dueDate:dueDate||dateOffset(3),
+    note:note||'到期后回来复盘结果，也可以继续追问或升级报告。',
+    sourceId:sourceId||'',
+    status:'open',
+    createdAt:new Date().toISOString()
+  });
+  saveReminders(list);
+  alert('已加入提醒中心');
+}
+
+function addReminderFromReportIndex(idx){
+  try{
+    var history=JSON.parse(localStorage.getItem('fengshui_history')||'[]');
+    var h=history[idx]; if(!h)return;
+    var delay=reminderDelayByType(h.type);
+    addReminder(reminderTitleForReport(h), h.type, dateOffset(delay), summarizeReportData(h.data).substring(0,120), h.id||String(idx));
+  }catch(e){}
+}
+
+function dueText(dateStr){
+  if(!dateStr)return '未设置日期';
+  var today=new Date(); today.setHours(0,0,0,0);
+  var d=new Date(dateStr+'T00:00:00');
+  var diff=Math.round((d-today)/86400000);
+  if(diff<0)return '已过期 '+Math.abs(diff)+' 天';
+  if(diff===0)return '今天到期';
+  if(diff===1)return '明天提醒';
+  return diff+' 天后提醒';
+}
+
+function renderReminders(){
+  var listEl=document.getElementById('reminder-list');
+  if(!listEl)return;
+  var list=loadReminders();
+  listEl.innerHTML='';
+  if(!list.length){
+    listEl.innerHTML='<div class="report-empty">还没有提醒。可以在报告中心把重要问事、解梦、命理、财运或风水报告加入提醒。</div>';
+    return;
+  }
+  list.forEach(function(r){
+    var item=document.createElement('div');
+    item.className='reminder-item'+(r.status==='done'?' done':'');
+    item.innerHTML='<div style="flex:1;min-width:0"><div class="reminder-title"></div><div class="reminder-meta"></div><div class="reminder-note"></div></div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn-ghost" data-done-reminder="'+r.id+'">'+(r.status==='done'?'恢复':'完成')+'</button><button class="btn-ghost" data-delete-reminder="'+r.id+'">删除</button></div>';
+    item.querySelector('.reminder-title').textContent=r.title||'事项提醒';
+    item.querySelector('.reminder-meta').textContent=(r.type||'提醒')+' · '+(r.dueDate||'')+' · '+dueText(r.dueDate);
+    item.querySelector('.reminder-note').textContent=r.note||'';
+    listEl.appendChild(item);
+  });
+}
+
+function updateDailyRetention(){
+  var title=document.getElementById('daily-retention-title');
+  var text=document.getElementById('daily-retention-text');
+  var meta=document.getElementById('daily-retention-meta');
+  if(!title||!text||!meta)return;
+  var profile=(CURRENT_USER&&CURRENT_USER.profile)||null;
+  if(!profile){
+    try{profile=JSON.parse(localStorage.getItem('cma_birth_profile')||'null');}catch(e){}
+  }
+  var day=new Date().getDate();
+  var seed=day+(profile&&profile.date?parseInt(profile.date.replace(/\D/g,'').slice(-2),10)||0:0);
+  var cards=[
+    {t:'今日适合先定计划',v:'重要事情先把目标和时间说清楚，再推进。不要急着承诺大结果，先做一个可回头的小动作。'},
+    {t:'今日适合整理与复盘',v:'把最近反复卡住的一件事先收尾。状态顺了，再开新的决定，会比同时推进很多事更稳。'},
+    {t:'今日适合沟通确认',v:'适合问清楚对方口径、时间和责任边界。涉及钱、合同或承诺的事，不要只停留在口头。'},
+    {t:'今日适合守财聚气',v:'花钱和投资先慢一点，重点看现金流、合作方是否可靠，以及这笔钱能不能真正落袋。'},
+    {t:'今日适合调整环境',v:'先整理门口、桌面和常坐的位置。空间顺了，人会更容易专注，做事也不容易反复。'}
+  ];
+  var c=cards[Math.abs(seed)%cards.length];
+  var reminders=loadReminders().filter(function(r){return r.status!=='done';});
+  title.textContent=c.t;
+  text.textContent=c.v;
+  meta.textContent=(profile&&profile.date?'已结合你的生辰资料生成每日提醒':'完善生辰后，每日提醒会更贴合你本人')+' · 当前有 '+reminders.length+' 个待跟进事项';
+}
+
 function renderReportCenter(){
   try{
     var list=document.getElementById('report-center-list');
@@ -621,7 +749,7 @@ function renderReportCenter(){
         '<div class="report-center-head"><div><div class="report-center-title"></div><div class="report-center-meta"></div></div>'+
         (h.score?'<div class="report-center-score"></div>':'')+'</div>'+
         '<div class="report-center-summary"></div>'+
-        '<div class="report-center-actions"><button class="btn-ghost" data-open-report="'+idx+'">查看详情</button><button class="btn-ghost" data-repeat="'+reportTargetByType(h.type)+'">继续分析</button></div>';
+        '<div class="report-center-actions"><button class="btn-ghost" data-open-report="'+idx+'">查看详情</button><button class="btn-ghost" data-remind-report="'+idx+'">添加提醒</button><button class="btn-ghost" data-repeat="'+reportTargetByType(h.type)+'">继续分析</button></div>';
       item.querySelector('.report-center-title').textContent=h.title||'未命名报告';
       item.querySelector('.report-center-meta').textContent=(h.type||'报告')+' · '+(h.time||'');
       item.querySelector('.report-center-summary').textContent=summary;
@@ -643,7 +771,9 @@ document.getElementById('clear-reports-btn').addEventListener('click',function()
 document.getElementById('report-center-list').addEventListener('click',function(e){
   var detail=e.target.closest('[data-open-report]');
   var repeat=e.target.closest('[data-repeat]');
+  var remind=e.target.closest('[data-remind-report]');
   if(repeat){goTo(repeat.getAttribute('data-repeat'));return;}
+  if(remind){addReminderFromReportIndex(parseInt(remind.getAttribute('data-remind-report')));return;}
   if(!detail)return;
   var idx=parseInt(detail.getAttribute('data-open-report'));
   try{
@@ -651,6 +781,33 @@ document.getElementById('report-center-list').addEventListener('click',function(
     var h=history[idx]; if(!h)return;
     alert((h.title||'报告详情')+'\n\n'+summarizeReportData(h.data).substring(0,900));
   }catch(err){}
+});
+document.getElementById('refresh-reminders-btn').addEventListener('click',renderReminders);
+document.getElementById('clear-reminders-btn').addEventListener('click',function(){
+  if(!confirm('确定清空所有提醒？'))return;
+  localStorage.removeItem('fengshui_reminders'); renderReminders(); updateDailyRetention();
+});
+document.getElementById('reminder-list').addEventListener('click',function(e){
+  var done=e.target.closest('[data-done-reminder]');
+  var del=e.target.closest('[data-delete-reminder]');
+  if(!done&&!del)return;
+  var id=(done||del).getAttribute(done?'data-done-reminder':'data-delete-reminder');
+  var list=loadReminders();
+  if(done){
+    list=list.map(function(r){if(r.id===id)r.status=r.status==='done'?'open':'done';return r;});
+  }else{
+    list=list.filter(function(r){return r.id!==id;});
+  }
+  saveReminders(list);
+});
+document.getElementById('daily-add-reminder-btn').addEventListener('click',function(){
+  addReminder(
+    document.getElementById('daily-retention-title').textContent||'今日个人提醒',
+    '每日提醒',
+    new Date().toISOString().slice(0,10),
+    document.getElementById('daily-retention-text').textContent||'今天回来复盘一次。',
+    'daily_'+new Date().toISOString().slice(0,10)
+  );
 });
 
 // ═══════════════════════════════════════════
@@ -665,6 +822,8 @@ function goTo(p){
   document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on');});
   document.getElementById('page-'+p).classList.add('on');
   if(p==='reports')renderReportCenter();
+  if(p==='reminders')renderReminders();
+  if(p==='home')updateDailyRetention();
   window.scrollTo(0,0);
 }
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(b)goTo(b.getAttribute('data-p'));});
@@ -2313,3 +2472,6 @@ updateAccountUI();
 authMe();
 initAlmanac();
 renderHistory();
+renderReportCenter();
+renderReminders();
+updateDailyRetention();

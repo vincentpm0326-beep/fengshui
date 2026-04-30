@@ -301,6 +301,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .report-center-score{font-family:'Cinzel',serif;color:var(--gold);font-size:18px;font-weight:700;line-height:1}
 .report-center-summary{font-size:12px;color:var(--ts);line-height:1.7;background:var(--ink3);border-radius:7px;padding:10px;margin-top:8px;white-space:pre-wrap}
 .report-center-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.retention-card{background:linear-gradient(135deg,rgba(30,45,94,.08),rgba(201,168,76,.07));border:1px solid rgba(30,45,94,.14);border-radius:12px;padding:13px;margin-bottom:14px;box-shadow:0 2px 12px rgba(30,45,94,.05)}
+.retention-k{font-size:10px;color:var(--gdim);font-weight:700;letter-spacing:.14em;margin-bottom:7px}
+.retention-title{font-size:15px;color:var(--navy);font-weight:800;margin-bottom:6px}
+.retention-text{font-size:13px;color:var(--tp);line-height:1.8;white-space:pre-line}
+.retention-meta{font-size:11px;color:var(--ts);line-height:1.6;margin-top:8px}
+.retention-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.reminder-list{display:grid;gap:10px}
+.reminder-item{background:var(--ink2);border:1px solid var(--b);border-radius:12px;padding:13px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.reminder-item.done{opacity:.62}
+.reminder-title{font-size:14px;color:var(--navy);font-weight:700;margin-bottom:4px}
+.reminder-meta{font-size:11px;color:var(--td);line-height:1.6}
+.reminder-note{font-size:12px;color:var(--ts);line-height:1.7;margin-top:7px;white-space:pre-line}
+.member-strip{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.18);border-radius:12px;padding:13px;margin:14px 0}
+.member-strip-title{font-size:13px;color:var(--gold);font-weight:800;margin-bottom:5px}
+.member-strip-text{font-size:12px;color:var(--ts);line-height:1.7}
 .ask-cta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .ask-cta{padding:8px 12px;border:1px solid var(--b);background:var(--ink3);border-radius:7px;color:var(--navy);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 .ask-cta:hover{border-color:rgba(30,45,94,.28);background:rgba(30,45,94,.05)}
@@ -418,6 +433,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="tab" data-p="almanac">黄历</button>
     <button class="tab" data-p="profile">命理</button>
     <button class="tab" data-p="reports">报告</button>
+    <button class="tab" data-p="reminders">提醒</button>
   </div>
   <span id="credits-badge" onclick="showPaywall()" style="cursor:pointer"></span>
   <span id="account-badge" onclick="showAccountModal()">登录</span>
@@ -437,6 +453,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div style="flex:1">
       <div class="dlbl">今日吉祥能量</div>
       <div id="home-pills"><span style="font-size:11px;color:var(--td)">前往黄历页面查看今日运势 →</span></div>
+    </div>
+  </div>
+  <div class="retention-card" id="daily-retention-card">
+    <div class="retention-k">今日个人提醒</div>
+    <div class="retention-title" id="daily-retention-title">今日先稳住节奏</div>
+    <div class="retention-text" id="daily-retention-text">适合先整理计划、确认细节，再推进重要事项。</div>
+    <div class="retention-meta" id="daily-retention-meta">完善生辰后，每日提醒会更贴合你本人。</div>
+    <div class="retention-actions">
+      <button class="btn-ghost" id="daily-add-reminder-btn">加入今日提醒</button>
+      <button class="btn-ghost" onclick="goTo('almanac')">查看今日黄历</button>
     </div>
   </div>
   <!-- 快捷问事入口 -->
@@ -461,6 +487,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
     <div class="history-list" id="history-list"></div>
   </div>
+  <div class="member-strip">
+    <div class="member-strip-title">月会员留存权益规划</div>
+    <div class="member-strip-text">每日黄历不限看、每日个人提醒、每月4次轻问事/解梦、报告长期保存、重要事项提醒。空间分析、命盘深度版和财运深度版仍按专题付费。</div>
+  </div>
 </div>
 
 <!-- ═══ 报告中心 ═══ -->
@@ -476,6 +506,26 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
     </div>
     <div class="report-center-list" id="report-center-list"></div>
+  </div>
+</div>
+
+<!-- ═══ 提醒中心 ═══ -->
+<div class="page" id="page-reminders">
+  <div class="h1">提醒中心</div>
+  <div class="h2">把一次问事变成后续跟进，重要节点不再靠自己记</div>
+  <div class="card">
+    <div class="history-title">
+      <span>我的事项提醒</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" id="refresh-reminders-btn">刷新</button>
+        <button class="btn-ghost" id="clear-reminders-btn">清空</button>
+      </div>
+    </div>
+    <div class="reminder-list" id="reminder-list"></div>
+  </div>
+  <div class="member-strip">
+    <div class="member-strip-title">下一步会员化方向</div>
+    <div class="member-strip-text">提醒中心后续可接入短信、微信或站内消息：面试3天后跟进、签约前一天复核、每月财运节点、节气提醒和报告升级提醒。</div>
   </div>
 </div>
 
