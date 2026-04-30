@@ -10,8 +10,8 @@ var AUTH_TOKEN   = localStorage.getItem('cma_auth_token') || '';
 var CURRENT_USER = null;
 var MEMBERSHIP_PLANS = {
   monthly:{name:'月会员', price:'¥39.9/月', days:30, lightCredits:4, desc:'每日黄历不限看 + 每月4次轻问事/解梦 + 报告与提醒'},
-  quarterly:{name:'季会员', price:'¥99/季', days:90, lightCredits:15, desc:'黄历不限看 + 每季15次轻服务 + 专题折扣'},
-  yearly:{name:'年会员', price:'¥299/年', days:365, lightCredits:60, desc:'黄历不限看 + 每年60次轻服务 + 节气与节点提醒'}
+  quarterly:{name:'季会员', price:'¥99/季', days:90, lightCredits:15, desc:'黄历不限看 + 每季15次轻问事/解梦 + 专题折扣'},
+  yearly:{name:'年会员', price:'¥299/年', days:365, lightCredits:60, desc:'黄历不限看 + 每年60次轻问事/解梦 + 节气与节点提醒'}
 };
 var SELECTED_MEMBERSHIP_PLAN = 'monthly';
 
@@ -110,8 +110,8 @@ function updateCreditsUI() {
   if (!badge) return;
   badge.style.display = 'inline';
   if (membershipActive())     { var m=getMembership(); badge.textContent = '会员 '+membershipDaysLeft()+'天'; badge.style.background = 'rgba(201,168,76,0.2)'; badge.style.color = '#8B6410'; }
-  else if (PRO_CREDITS === -1)    { badge.textContent = '∞ 无限次'; badge.style.background = 'rgba(201,168,76,0.18)'; badge.style.color = '#C9A84C'; }
-  else if (PRO_CREDITS > 0)  { badge.textContent = PRO_CREDITS + ' 次剩余'; badge.style.background = 'rgba(201,168,76,0.18)'; badge.style.color = '#C9A84C'; }
+  else if (PRO_CREDITS === -1)    { badge.textContent = '∞ 专题权益'; badge.style.background = 'rgba(201,168,76,0.18)'; badge.style.color = '#C9A84C'; }
+  else if (PRO_CREDITS > 0)  { badge.textContent = '专题权益 ' + PRO_CREDITS; badge.style.background = 'rgba(201,168,76,0.18)'; badge.style.color = '#C9A84C'; }
   else if (!TRIAL_USED)      { badge.textContent = '1 次免费试用'; badge.style.background = 'rgba(76,175,118,0.18)'; badge.style.color = '#4CAF76'; }
   else                       { badge.textContent = '⬆ 升级解锁'; badge.style.background = 'rgba(139,26,26,0.5)'; badge.style.color = '#FFB0B0'; }
 }
@@ -296,7 +296,7 @@ function checkProAccess(count) {
   count = count || 1;
   trackEvent('analysis_gate', {module:(document.querySelector('.page.on')||{}).id||'', cost:count, member:membershipActive(), credits:PRO_CREDITS});
   if (count === 1 && isLightServiceContext() && consumeMembershipLightCredit()) { LAST_DEDUCTION = 'member-light'; LAST_DEDUCTION_COUNT = 1; trackEvent('member_light_used', {module:(document.querySelector('.page.on')||{}).id||''}); return true; }
-  if (PRO_CREDITS === -1) return true; // 无限次码，直接通过
+  if (PRO_CREDITS === -1) return true; // 不限次权益，直接通过
   if (PRO_CREDITS >= count) { PRO_CREDITS -= count; LAST_DEDUCTION = 'credit'; LAST_DEDUCTION_COUNT = count; saveProState(); updateCreditsUI(); return true; }
   if (count === 1 && !TRIAL_USED) { TRIAL_USED = true; LAST_DEDUCTION = 'trial'; LAST_DEDUCTION_COUNT = 1; saveProState(); updateCreditsUI(); return true; }
   showPaywall();
@@ -328,7 +328,7 @@ function selectPlan(card, label) {
   card.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.18)';
   var hint = document.getElementById('plan-hint');
   hint.style.display = 'block';
-  hint.textContent = '已选：' + label + ' · 付款后联系获取激活码，输入下方激活';
+  hint.textContent = '已选：' + label + ' · 付款后联系获取权益码，在下方核销';
   trackEvent('plan_select', {label:label});
 }
 
@@ -358,7 +358,7 @@ function simulateMemberOpen(planKey){
 function activateCode() {
   var code = document.getElementById('act-code').value.trim();
   var msg  = document.getElementById('act-msg');
-  if (!code) { msg.textContent = '请输入激活码'; msg.style.color = '#E08080'; return; }
+  if (!code) { msg.textContent = '请输入权益码'; msg.style.color = '#E08080'; return; }
   msg.textContent = '验证中…'; msg.style.color = 'var(--ts)';
   fetch('/api/activate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code})})
     .then(function(r){ return r.json(); })
@@ -373,7 +373,7 @@ function activateCode() {
         }
         saveProState();
         updateCreditsUI();
-        msg.textContent = d.unlimited ? '✦ 激活成功！已解锁无限次分析' : '✦ 激活成功！已解锁 ' + d.credits + ' 次分析';
+        msg.textContent = d.unlimited ? '✦ 权益码核销成功，已解锁不限次专题分析' : '✦ 权益码核销成功，已到账 ' + d.credits + ' 次专题权益';
         msg.style.color = '#4CAF76';
         trackEvent('activate_success', {credits:d.credits, unlimited:!!d.unlimited});
         setTimeout(hidePaywall, 1400);
@@ -1192,7 +1192,7 @@ function renderQuickAskCtas(category){
   if(category==='dream')ctas.push({label:'继续梦境解析',target:'dream'});
   if(category==='timing'||category==='general')ctas.push({label:'查看今日黄历',target:'almanac'});
   ctas.push({label:'查看报告中心',target:'reports'});
-  ctas.push({label:'开通/激活次数',action:'paywall'});
+  ctas.push({label:'开通会员/购买专题',action:'paywall'});
   ctas.forEach(function(c){
     var btn=document.createElement('button');
     btn.className='ask-cta';

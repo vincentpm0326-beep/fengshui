@@ -117,7 +117,7 @@ tr:hover td{background:rgba(201,168,76,0.03)}
   <div class="login-card">
     <div style="font-size:28px;margin-bottom:14px">⚙</div>
     <div class="login-title">CMA 管理后台</div>
-    <div class="login-sub">Cyber Metaphysics Architect · 激活码管理系统</div>
+    <div class="login-sub">Cyber Metaphysics Architect · 权益与运营管理系统</div>
     <input class="input" type="password" id="secret-input" placeholder="输入管理密钥..." onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-primary" onclick="doLogin()">进入后台</button>
     <div class="msg err" id="login-msg"></div>
@@ -139,11 +139,11 @@ tr:hover td{background:rgba(201,168,76,0.03)}
       <div class="side-group-label">运营管理</div>
       <button class="menu-btn on" data-admin-page="overview"><span class="menu-main"><span class="menu-icon">▦</span><span class="menu-text">数据总览</span></span></button>
       <button class="menu-btn" data-admin-page="analytics"><span class="menu-main"><span class="menu-icon">◎</span><span class="menu-text">行为埋点</span></span><span class="menu-count" id="m-events">0</span></button>
-      <button class="menu-btn" data-admin-page="codes"><span class="menu-main"><span class="menu-icon">◇</span><span class="menu-text">激活码管理</span></span><span class="menu-count" id="m-codes">0</span></button>
+      <button class="menu-btn" data-admin-page="codes"><span class="menu-main"><span class="menu-icon">◇</span><span class="menu-text">权益码管理</span></span><span class="menu-count" id="m-codes">0</span></button>
       <button class="menu-btn" data-admin-page="prompts"><span class="menu-main"><span class="menu-icon">✎</span><span class="menu-text">Prompt 模板</span></span><span class="menu-count" id="m-prompts">0</span></button>
       <div class="side-group-label">增长闭环</div>
       <button class="menu-btn" data-admin-page="reports"><span class="menu-main"><span class="menu-icon">▣</span><span class="menu-text">报告管理</span></span><span class="menu-count">规划</span></button>
-      <button class="menu-btn" data-admin-page="orders"><span class="menu-main"><span class="menu-icon">¥</span><span class="menu-text">会员订单</span></span><span class="menu-count">规划</span></button>
+      <button class="menu-btn" data-admin-page="orders"><span class="menu-main"><span class="menu-icon">¥</span><span class="menu-text">会员与权益</span></span><span class="menu-count">规划</span></button>
       <button class="menu-btn" data-admin-page="settings"><span class="menu-main"><span class="menu-icon">⚙</span><span class="menu-text">系统设置</span></span></button>
     </aside>
 
@@ -152,19 +152,19 @@ tr:hover td{background:rgba(201,168,76,0.03)}
         <div class="page-head">
           <div>
             <div class="page-title">数据总览</div>
-            <div class="page-sub">查看激活码发放、激活与使用情况，后续可扩展订单、报告和用户指标。</div>
+            <div class="page-sub">查看权益发放、核销与使用情况，后续可扩展订单、报告和用户指标。</div>
           </div>
-          <button class="btn-sm" onclick="setAdminPage('codes')">进入激活码管理</button>
+          <button class="btn-sm" onclick="setAdminPage('codes')">进入权益码管理</button>
         </div>
         <div class="section">
           <div class="section-title">核心指标</div>
           <div class="stats-grid" id="stats-grid">
-            <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">总激活码</div></div>
-            <div class="stat-card"><div class="stat-num" id="s-activated">-</div><div class="stat-lbl">已激活</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-lbl">总权益码</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-activated">-</div><div class="stat-lbl">已核销</div></div>
             <div class="stat-card"><div class="stat-num" id="s-pending">-</div><div class="stat-lbl">未使用</div></div>
-            <div class="stat-card"><div class="stat-num" id="s-unlimited">-</div><div class="stat-lbl">无限次码</div></div>
-            <div class="stat-card"><div class="stat-num" id="s-issued">-</div><div class="stat-lbl">总发放次数</div></div>
-            <div class="stat-card"><div class="stat-num" id="s-used">-</div><div class="stat-lbl">已使用次数</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-unlimited">-</div><div class="stat-lbl">测试权益码</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-issued">-</div><div class="stat-lbl">发放权益</div></div>
+            <div class="stat-card"><div class="stat-num" id="s-used">-</div><div class="stat-lbl">核销权益</div></div>
           </div>
         </div>
         <div class="section">
@@ -221,13 +221,13 @@ tr:hover td{background:rgba(201,168,76,0.03)}
       <section class="admin-page" id="admin-page-codes">
         <div class="page-head">
           <div>
-            <div class="page-title">激活码管理</div>
-            <div class="page-sub">生成付费激活码、查看激活状态和使用次数。原有使用列表保留在本页下方。</div>
+            <div class="page-title">权益码管理</div>
+            <div class="page-sub">生成会员或专题服务权益码，查看核销状态与权益使用情况。使用列表保留在本页下方。</div>
           </div>
           <button class="btn-sm" onclick="loadData()">刷新数据</button>
         </div>
         <div class="section">
-          <div class="section-title">生成激活码</div>
+          <div class="section-title">生成权益码</div>
           <div class="gen-card">
             <div class="gen-grid">
               <div>
@@ -237,10 +237,10 @@ tr:hover td{background:rgba(201,168,76,0.03)}
               <div>
                 <div class="field-lbl">套餐类型</div>
                 <select class="select" id="g-credits">
-                  <option value="3">体验包 · 3次 (¥6.9)</option>
-                  <option value="10" selected>标准包 · 10次 (¥19.9)</option>
-                  <option value="30">超值包 · 30次 (¥49.9)</option>
-                  <option value="-1">无限次 · 测试专用</option>
+                  <option value="3">专题权益 · 3次</option>
+                  <option value="10" selected>专题权益 · 10次</option>
+                  <option value="30">专题权益 · 30次</option>
+                  <option value="-1">不限次 · 测试专用</option>
                 </select>
               </div>
               <div>
@@ -256,37 +256,37 @@ tr:hover td{background:rgba(201,168,76,0.03)}
               <div class="new-code" id="new-code-text"></div>
               <div class="new-code-meta" id="new-code-meta"></div>
               <div style="text-align:center;margin-top:10px">
-                <button class="btn-sm" onclick="copyNewCode()">复制激活码</button>
+                <button class="btn-sm" onclick="copyNewCode()">复制权益码</button>
               </div>
             </div>
           </div>
         </div>
         <div class="section">
-          <div class="section-title">激活码使用列表</div>
+          <div class="section-title">权益码使用列表</div>
           <div class="filter-row">
             <button class="filter-btn on" data-filter="all" onclick="setFilter(this)">全部</button>
-            <button class="filter-btn" data-filter="pending" onclick="setFilter(this)">未激活</button>
-            <button class="filter-btn" data-filter="activated" onclick="setFilter(this)">已激活</button>
-            <button class="filter-btn" data-filter="unlimited" onclick="setFilter(this)">无限次</button>
+            <button class="filter-btn" data-filter="pending" onclick="setFilter(this)">未核销</button>
+            <button class="filter-btn" data-filter="activated" onclick="setFilter(this)">已核销</button>
+            <button class="filter-btn" data-filter="unlimited" onclick="setFilter(this)">不限次</button>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>激活码</th>
+                  <th>权益码</th>
                   <th>微信昵称</th>
                   <th>套餐</th>
-                  <th>用量</th>
+                  <th>权益用量</th>
                   <th>状态</th>
                   <th>创建时间</th>
-                  <th>激活时间</th>
+                  <th>核销时间</th>
                   <th>备注</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="codes-tbody"></tbody>
             </table>
-            <div class="empty" id="codes-empty" style="display:none">暂无激活码</div>
+            <div class="empty" id="codes-empty" style="display:none">暂无权益码</div>
           </div>
         </div>
       </section>
@@ -317,7 +317,7 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 
       <section class="admin-page" id="admin-page-orders">
         <div class="page-head">
-          <div><div class="page-title">会员订单</div><div class="page-sub">查看会员开通台账、有效期、剩余轻服务次数和来源。当前为 MVP 同步数据，后续可接真实支付订单。</div></div>
+          <div><div class="page-title">会员与权益</div><div class="page-sub">查看会员开通台账、有效期、轻问事/解梦权益和来源。当前为 MVP 同步数据，后续可接真实支付订单。</div></div>
           <button class="btn-sm" onclick="loadMemberships()">刷新会员</button>
         </div>
         <div class="section">
@@ -326,14 +326,14 @@ tr:hover td{background:rgba(201,168,76,0.03)}
             <div class="stat-card"><div class="stat-num" id="ms-total">-</div><div class="stat-lbl">会员总数</div></div>
             <div class="stat-card"><div class="stat-num" id="ms-active">-</div><div class="stat-lbl">有效会员</div></div>
             <div class="stat-card"><div class="stat-num" id="ms-expired">-</div><div class="stat-lbl">已过期</div></div>
-            <div class="stat-card"><div class="stat-num" id="ms-light">-</div><div class="stat-lbl">剩余轻服务</div></div>
+            <div class="stat-card"><div class="stat-num" id="ms-light">-</div><div class="stat-lbl">剩余轻问事/解梦权益</div></div>
           </div>
         </div>
         <div class="section">
           <div class="section-title">会员列表</div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>会员</th><th>套餐</th><th>状态</th><th>剩余天数</th><th>轻服务次数</th><th>来源</th><th>开通时间</th><th>到期时间</th><th>更新时间</th></tr></thead>
+              <thead><tr><th>会员</th><th>套餐</th><th>状态</th><th>剩余天数</th><th>轻问事/解梦权益</th><th>来源</th><th>开通时间</th><th>到期时间</th><th>更新时间</th></tr></thead>
               <tbody id="members-tbody"></tbody>
             </table>
             <div class="empty" id="members-empty" style="display:none">暂无会员记录</div>
@@ -511,8 +511,8 @@ function renderAnalytics(a){
   var rows=[
     ['付费墙曝光', f.paywall_view||0, '用户看到会员/专题服务入口'],
     ['选择套餐', f.plan_select||0, '用户点击会员或专题套餐'],
-    ['开通会员', f.membership_open||0, '会员实验转化'],
-    ['激活成功', f.activate_success||0, '激活码核销转化'],
+    ['开通会员', f.membership_open||0, '会员开通转化'],
+    ['权益核销', f.activate_success||0, '权益码核销转化'],
     ['开始分析', f.analysis_start||0, '用户进入服务流程'],
     ['分析成功', f.analysis_success||0, '模型/算法返回结果'],
     ['保存报告', f.report_saved||0, '形成报告资产'],
@@ -611,7 +611,7 @@ function renderTable(){
       '<td>'+creditsTag(c.credits)+'</td>'+
       '<td><div style="font-size:11px;color:var(--ts)">'+used+' / '+total+'</div>'+
         (c.credits!==-1?'<div class="progress"><div class="progress-fill" style="width:'+pct+'%"></div></div>':'')+'</td>'+
-      '<td>'+(c.activated?'<span class="status-ok">✓ 已激活</span>':'<span class="status-pend">◌ 未激活</span>')+'</td>'+
+      '<td>'+(c.activated?'<span class="status-ok">✓ 已核销</span>':'<span class="status-pend">◌ 未核销</span>')+'</td>'+
       '<td style="font-size:11px;color:var(--ts)">'+(c.created_at?fmtDate(c.created_at):'-')+'</td>'+
       '<td style="font-size:11px;color:var(--ts)">'+(c.activated_at?fmtDate(c.activated_at):'-')+'</td>'+
       '<td style="font-size:11px;color:var(--td)">'+escHtml(c.note||'')+'</td>'+
@@ -826,7 +826,7 @@ function generateCode(){
     NEW_CODE_VAL=d.entry.code;
     var box=document.getElementById('new-code-box');
     document.getElementById('new-code-text').textContent=d.entry.code;
-    var typeLabel=d.entry.credits===-1?'无限次':d.entry.credits+'次';
+    var typeLabel=d.entry.credits===-1?'不限次权益':d.entry.credits+'次专题权益';
     document.getElementById('new-code-meta').textContent=typeLabel+' · '+wechat+(note?' · '+note:'');
     box.style.display='block';
     document.getElementById('g-wechat').value='';
@@ -836,7 +836,7 @@ function generateCode(){
 }
 
 function revokeCode(code){
-  if(!confirm('确定撤销激活码：'+code+'？此操作不可恢复。'))return;
+  if(!confirm('确定撤销权益码：'+code+'？此操作不可恢复。'))return;
   fetch('/api/admin/revoke',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({secret:SECRET,code:code})
