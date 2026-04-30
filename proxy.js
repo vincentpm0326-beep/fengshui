@@ -18,6 +18,7 @@ const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
 const MODEL_SETTINGS_FILE = path.join(__dirname, 'data', 'model-settings.json');
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const EVENTS_FILE = path.join(__dirname, 'data', 'events.jsonl');
+const MEMBERSHIPS_FILE = path.join(__dirname, 'data', 'memberships.json');
 const MODEL_OPTIONS = [
   {provider:'openrouter', model:'anthropic/claude-sonnet-4.6', name:'Claude Sonnet 4.6', recommended:['quick_ask','fengshui','dream','almanac','bazi','wealth','followup']},
   {provider:'openrouter', model:'anthropic/claude-opus-4.6', name:'Claude Opus 4.6', recommended:['bazi','wealth','followup']},
@@ -235,6 +236,21 @@ function readEvents(limit){
       try{ return JSON.parse(line); }catch(e){ return null; }
     }).filter(Boolean);
   }catch(e){ return []; }
+}
+function loadMemberships(){
+  ensureDataDir();
+  try{
+    if(fs.existsSync(MEMBERSHIPS_FILE)){
+      const list = JSON.parse(fs.readFileSync(MEMBERSHIPS_FILE, 'utf8'));
+      return Array.isArray(list) ? list : [];
+    }
+  }catch(e){}
+  return [];
+}
+function saveMemberships(list){
+  ensureDataDir();
+  fs.writeFileSync(MEMBERSHIPS_FILE, JSON.stringify(list, null, 2), {encoding:'utf8', mode:0o600});
+  try{ fs.chmodSync(MEMBERSHIPS_FILE, 0o600); }catch(e){}
 }
 function maskKey(key){
   if(!key) return '';
@@ -527,6 +543,39 @@ app.post('/api/event',(req,res)=>{
     });
     res.json({ok:true});
   }catch(e){ res.json({ok:false}); }
+});
+
+app.post('/api/membership/sync',(req,res)=>{
+  try{
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const localId = safeEventValue(body.local_id || body.localId || '', 80) || crypto.randomUUID();
+    const plan = ['monthly','quarterly','yearly'].includes(body.plan) ? body.plan : 'monthly';
+    const nameMap = {monthly:'月会员', quarterly:'季会员', yearly:'年会员'};
+    const startedAt = body.startedAt && !Number.isNaN(Date.parse(body.startedAt)) ? new Date(body.startedAt).toISOString() : new Date().toISOString();
+    const expiresAt = body.expiresAt && !Number.isNaN(Date.parse(body.expiresAt)) ? new Date(body.expiresAt).toISOString() : new Date(Date.now()+30*86400000).toISOString();
+    const lightCredits = Math.max(0, Math.min(999, parseInt(body.lightCredits, 10) || 0));
+    const phone = safeEventValue(body.phone || '', 30);
+    const list = loadMemberships();
+    const now = new Date().toISOString();
+    let item = list.find(m => m.local_id === localId);
+    if(!item){
+      item = {id:crypto.randomUUID(), local_id:localId, created_at:now, source:'frontend_mvp'};
+      list.push(item);
+    }
+    Object.assign(item, {
+      plan,
+      name: nameMap[plan],
+      phone_mask: phone ? phone.replace(/^(\d{3})\d+(\d{4})$/, '$1****$2') : '',
+      started_at: startedAt,
+      expires_at: expiresAt,
+      light_credits: lightCredits,
+      status: new Date(expiresAt).getTime() > Date.now() ? 'active' : 'expired',
+      updated_at: now
+    });
+    saveMemberships(list);
+    appendEvent({id:crypto.randomUUID(), name:'membership_sync', props:{plan, light_credits:lightCredits}, ts:now, path:'/api/membership/sync', ua:safeEventValue(req.headers['user-agent']||'',160), ip_hash:crypto.createHash('sha256').update(String(req.ip||'')).digest('hex').slice(0,16)});
+    res.json({ok:true,membership:item});
+  }catch(e){ res.json({ok:false,message:'会员同步失败'}); }
 });
 
 // ═══ 安全：静态文件（禁止目录浏览，隐藏敏感文件） ═══
@@ -1468,6 +1517,29 @@ function buildAnalytics(){
 app.get('/api/admin/analytics',(req,res)=>{
   if(!adminAuth(req,res))return;
   res.json({ok:true,analytics:buildAnalytics()});
+});
+
+app.get('/api/admin/memberships',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  const now = Date.now();
+  const memberships = loadMemberships().map(m => {
+    const expires = new Date(m.expires_at).getTime();
+    return {
+      ...m,
+      status: expires > now ? 'active' : 'expired',
+      days_left: Math.max(0, Math.ceil((expires - now)/86400000))
+    };
+  }).sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
+  const stats = {
+    total: memberships.length,
+    active: memberships.filter(m=>m.status==='active').length,
+    expired: memberships.filter(m=>m.status==='expired').length,
+    monthly: memberships.filter(m=>m.plan==='monthly').length,
+    quarterly: memberships.filter(m=>m.plan==='quarterly').length,
+    yearly: memberships.filter(m=>m.plan==='yearly').length,
+    light_credits_left: memberships.reduce((s,m)=>s+(parseInt(m.light_credits,10)||0),0)
+  };
+  res.json({ok:true,memberships,stats});
 });
 // Prompt 模板列表
 app.get('/api/admin/prompts',(req,res)=>{

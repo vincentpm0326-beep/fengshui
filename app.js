@@ -50,10 +50,29 @@ function membershipDaysLeft(){
 }
 
 function saveMembership(m){
+  if(!m.local_id) m.local_id = 'lm_'+Date.now()+'_'+Math.random().toString(16).slice(2);
   localStorage.setItem('cma_membership', JSON.stringify(m));
   updateCreditsUI();
   renderMemberCenter();
   updateDailyRetention();
+  syncMembershipToServer(m);
+}
+
+function syncMembershipToServer(m){
+  try{
+    fetch('/api/membership/sync', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        local_id:m.local_id,
+        plan:m.plan,
+        startedAt:m.startedAt,
+        expiresAt:m.expiresAt,
+        lightCredits:m.lightCredits||0,
+        phone:CURRENT_USER&&CURRENT_USER.phone||''
+      })
+    }).catch(function(){});
+  }catch(e){}
 }
 
 function activateMembership(planKey){
