@@ -347,7 +347,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .pw-close:hover{color:var(--tp)}
 .pw-title{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:.06em;margin-bottom:4px}
 .pw-sub{font-size:12px;color:var(--ts);margin-bottom:18px;line-height:1.6}
+.pw-section{margin-bottom:14px}
+.pw-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:8px}
+.pw-section-title{font-size:12px;font-weight:700;color:var(--navy)}
+.pw-section-note{font-size:10px;color:var(--td);line-height:1.5;text-align:right}
 .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.plan-grid.member-only{grid-template-columns:1fr;margin-bottom:0}
+.plan-grid.topic-only{grid-template-columns:repeat(2,1fr);margin-bottom:0}
 .plan-card{background:var(--ink3);border:1px solid var(--b);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .18s}
 .plan-card:hover{border-color:rgba(30,45,94,0.25);transform:translateY(-1px)}
 .plan-card.featured{border-color:rgba(30,45,94,0.3);background:rgba(30,45,94,0.04)}
@@ -554,12 +560,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="retention-text" id="member-status-text">开通后可获得每日黄历不限看、每日个人提醒、轻问事/解梦权益和报告提醒能力。</div>
     <div class="member-status-grid">
       <div class="member-stat"><div class="member-stat-num" id="member-days-left">0</div><div class="member-stat-label">剩余天数</div></div>
-      <div class="member-stat"><div class="member-stat-num" id="member-light-left">0</div><div class="member-stat-label">轻服务次数</div></div>
+      <div class="member-stat"><div class="member-stat-num" id="member-light-left">0</div><div class="member-stat-label">轻问事/解梦权益</div></div>
       <div class="member-stat"><div class="member-stat-num" id="member-reminder-count">0</div><div class="member-stat-label">待跟进提醒</div></div>
     </div>
   </div>
   <div class="card">
-    <div class="history-title"><span>会员套餐</span><span style="font-size:10px;color:var(--td)">MVP 本地模拟开通，后续接支付订单</span></div>
+    <div class="history-title"><span>会员套餐</span><span style="font-size:10px;color:var(--td)">会员权益与专题服务分开生效</span></div>
     <div class="member-plan-grid">
       <div class="member-plan-card featured" onclick="selectMemberPlan(this,'monthly')">
         <div class="member-plan-name">月会员</div>
@@ -569,17 +575,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <div class="member-plan-card" onclick="selectMemberPlan(this,'quarterly')">
         <div class="member-plan-name">季会员</div>
         <div class="member-plan-price">¥99</div>
-        <div class="member-plan-desc">每季15次轻服务 + 专题折扣 + 报告沉淀</div>
+        <div class="member-plan-desc">每季15次轻问事/解梦 + 专题折扣 + 报告沉淀</div>
       </div>
       <div class="member-plan-card" onclick="selectMemberPlan(this,'yearly')">
         <div class="member-plan-name">年会员</div>
         <div class="member-plan-price">¥299</div>
-        <div class="member-plan-desc">每年60次轻服务 + 节气/月运节点提醒</div>
+        <div class="member-plan-desc">每年60次轻问事/解梦 + 节气/月运节点提醒</div>
       </div>
     </div>
     <div id="member-plan-hint" style="display:none;font-size:12px;color:#7AD4C0;margin:12px 0 0;text-align:center;line-height:1.6"></div>
     <div class="retention-actions">
-      <button class="pw-act-btn" onclick="simulateMemberOpen()">模拟开通会员</button>
+      <button class="pw-act-btn" onclick="simulateMemberOpen()">开通会员</button>
       <button class="btn-ghost" onclick="showPaywall()">查看专题服务</button>
     </div>
     <div class="pw-msg" id="member-open-msg"></div>
@@ -1325,26 +1331,41 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="paywall-modal">
     <button class="pw-close" onclick="hidePaywall()">✕</button>
     <div class="pw-title">会员与专题服务</div>
-    <div class="pw-sub">轻问事、解梦和黄历适合会员陪伴；命理、财运、空间分析等深度服务按专题解锁。</div>
+    <div class="pw-sub">会员负责日常陪伴，专题服务负责深度报告。两类权益分开购买，避免互相占用。</div>
 
-    <div class="plan-grid">
-      <div class="plan-card featured" onclick="selectPlan(this,'月会员 ¥39.9 · 每月4次轻服务')">
-        <div class="plan-badge">会员</div>
-        <div class="plan-price">¥39.9</div>
-        <div class="plan-unit">每月</div>
-        <div class="plan-credits">4次轻服务 + 每日提醒</div>
+    <div class="pw-section">
+      <div class="pw-section-head">
+        <div class="pw-section-title">开通会员</div>
+        <div class="pw-section-note">适合日常看运势、轻问事、解梦和提醒</div>
       </div>
-      <div class="plan-card" onclick="selectPlan(this,'命理/财运基础版 ¥19.9')">
-        <div class="plan-badge">命理</div>
-        <div class="plan-price">¥19.9</div>
-        <div class="plan-unit">专题</div>
-        <div class="plan-credits">命盘/财运基础版</div>
+      <div class="plan-grid member-only">
+        <div class="plan-card featured" onclick="selectPlan(this,'月会员 ¥39.9 · 每月4次轻问事/解梦权益')">
+          <div class="plan-badge">会员权益</div>
+          <div class="plan-price">¥39.9</div>
+          <div class="plan-unit">每月</div>
+          <div class="plan-credits">黄历不限看 + 4次轻问事/解梦 + 提醒</div>
+        </div>
       </div>
-      <div class="plan-card" onclick="selectPlan(this,'空间图文详批 ¥49.9')">
-        <div class="plan-badge">空间</div>
-        <div class="plan-price">¥49.9</div>
-        <div class="plan-unit">专题</div>
-        <div class="plan-credits">图文风水详批</div>
+    </div>
+
+    <div class="pw-section">
+      <div class="pw-section-head">
+        <div class="pw-section-title">购买专题服务</div>
+        <div class="pw-section-note">适合命理、财运、空间等深度分析</div>
+      </div>
+      <div class="plan-grid topic-only">
+        <div class="plan-card" onclick="selectPlan(this,'命理/财运基础版 ¥19.9')">
+          <div class="plan-badge">命理专题</div>
+          <div class="plan-price">¥19.9</div>
+          <div class="plan-unit">单次专题</div>
+          <div class="plan-credits">命盘/财运基础版</div>
+        </div>
+        <div class="plan-card" onclick="selectPlan(this,'空间图文详批 ¥49.9')">
+          <div class="plan-badge">空间专题</div>
+          <div class="plan-price">¥49.9</div>
+          <div class="plan-unit">单次专题</div>
+          <div class="plan-credits">图文风水详批</div>
+        </div>
       </div>
     </div>
     <button class="btn-ghost" style="width:100%;margin:-5px 0 14px" onclick="hidePaywall();goTo('member')">进入会员中心查看完整权益</button>
@@ -1357,11 +1378,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <img src="assets/wechat-qr.png" alt="微信二维码" style="width:90px;height:90px;border-radius:8px;flex-shrink:0;background:var(--ink4);object-fit:cover">
       <div>
         <div style="font-size:13px;color:var(--tp);font-weight:600;margin-bottom:5px">微信扫码付款</div>
-        <div style="font-size:11px;color:var(--ts);line-height:1.7">① 扫码加微信好友<br>② 发送付款截图及所选套餐<br>③ 收到激活码后在下方输入</div>
+        <div style="font-size:11px;color:var(--ts);line-height:1.7">① 扫码加微信好友<br>② 发送付款截图及所选权益<br>③ 收到权益码后在下方输入</div>
       </div>
     </div>
 
-    <div class="pw-act-label">已有激活码？在此输入：</div>
+    <div class="pw-act-label">已有权益码？在此输入：</div>
     <div class="pw-act-row">
       <input class="pw-act-input" id="act-code" placeholder="CMA-XXXX-XXXX" maxlength="20"
         onkeydown="if(event.key==='Enter')activateCode()">
@@ -1370,7 +1391,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="pw-msg" id="act-msg"></div>
 
     <div class="pw-footer">
-      购买后请联系获取激活码 · 激活码一次性有效 · 不同套餐互不通用
+      购买后请联系获取权益码 · 权益码一次性有效 · 会员权益与专题服务互不通用
     </div>
   </div>
 </div>

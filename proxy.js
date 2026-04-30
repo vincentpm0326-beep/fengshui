@@ -344,7 +344,7 @@ function makeLimiter(max, windowMin, msg){
 app.use('/api/chat',   makeLimiter(15,  1, '请求过于频繁，请稍后再试'));
 app.use('/api/bazi',   makeLimiter(10,  1, '请求过于频繁，请稍后再试'));
 app.use('/api/wealth', makeLimiter(10,  1, '请求过于频繁，请稍后再试'));
-// 激活码：每 IP 每15分钟最多 8 次（防暴力破解）
+// 权益码：每 IP 每15分钟最多 8 次（防暴力破解）
 app.use('/api/activate', makeLimiter(8, 15, '尝试次数过多，请15分钟后再试'));
 // 管理后台：每 IP 每分钟最多 20 次
 app.use('/api/admin', makeLimiter(20, 1, '请求过于频繁'));
@@ -1381,7 +1381,7 @@ ${wctx}
   }catch(e){ res.status(500).json({error:{message:'分析服务暂时不可用，请稍后重试'}}); }
 });
 
-// ═══ 激活码系统（文件持久化） ═══
+// ═══ 权益码系统（文件持久化） ═══
 const CODES_FILE   = path.join(__dirname, 'data', 'codes.json');
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'cma-admin-2026';
 
@@ -1392,7 +1392,7 @@ function loadCodes(){
 function saveCodes(codes){
   ensureDataDir();
   try{ fs.writeFileSync(CODES_FILE, JSON.stringify(codes,null,2),'utf8'); }
-  catch(e){ console.error('保存激活码失败:',e.message); }
+  catch(e){ console.error('保存权益码失败:',e.message); }
 }
 function randHex(){ return crypto.randomBytes(2).toString('hex').toUpperCase(); }
 function genCode(credits, wechatName, note){
@@ -1409,21 +1409,21 @@ function genCode(credits, wechatName, note){
 (function initCodes(){
   if(!fs.existsSync(CODES_FILE)){
     saveCodes([
-      {code:'CMA-TEST-UNLM',credits:-1, wechat_name:'无限测试',note:'无限次测试码',created_at:new Date().toISOString(),activated:false,activated_at:null,credits_used:0},
+      {code:'CMA-TEST-UNLM',credits:-1, wechat_name:'测试权益',note:'不限次测试权益码',created_at:new Date().toISOString(),activated:false,activated_at:null,credits_used:0},
       {code:'CMA-TEST-0003',credits:3,  wechat_name:'体验测试', note:'3次测试码', created_at:new Date().toISOString(),activated:false,activated_at:null,credits_used:0},
     ]);
   }
 })();
 
-// 激活码兑换
+// 权益码核销
 app.post('/api/activate',(req,res)=>{
   const {code}=req.body;
-  if(!code) return res.json({ok:false,message:'请输入激活码'});
+  if(!code) return res.json({ok:false,message:'请输入权益码'});
   const upper=code.toUpperCase().trim();
   const codes=loadCodes();
   const entry=codes.find(c=>c.code===upper);
-  if(!entry) return res.json({ok:false,message:'无效激活码，请检查后重试'});
-  if(entry.activated && entry.credits!==-1) return res.json({ok:false,message:'该激活码已被使用'});
+  if(!entry) return res.json({ok:false,message:'无效权益码，请检查后重试'});
+  if(entry.activated && entry.credits!==-1) return res.json({ok:false,message:'该权益码已被核销'});
   entry.activated=true; entry.activated_at=new Date().toISOString();
   saveCodes(codes);
   res.json({ok:true,credits:entry.credits,unlimited:entry.credits===-1});
@@ -1446,16 +1446,16 @@ function adminAuth(req,res){
   if(secret!==ADMIN_SECRET){res.status(403).json({ok:false,message:'密钥错误'});return false;}
   return true;
 }
-// 生成激活码
+// 生成权益码
 app.post('/api/admin/generate',(req,res)=>{
   if(!adminAuth(req,res))return;
   const {credits,wechat_name,note}=req.body;
   const cr=parseInt(credits);
-  if(isNaN(cr)||![-1,3,10,30].includes(cr)) return res.json({ok:false,message:'无效次数'});
+  if(isNaN(cr)||![-1,3,10,30].includes(cr)) return res.json({ok:false,message:'无效权益额度'});
   const entry=genCode(cr,wechat_name,note);
   res.json({ok:true,entry});
 });
-// 查询所有激活码 + 统计
+// 查询所有权益码 + 统计
 app.get('/api/admin/codes',(req,res)=>{
   if(!adminAuth(req,res))return;
   const codes=loadCodes();
@@ -1606,13 +1606,13 @@ app.post('/api/admin/model-settings',(req,res)=>{
   saveModelSettings(current);
   res.json({ok:true,settings:publicModelSettings()});
 });
-// 撤销/删除激活码
+// 撤销/删除权益码
 app.post('/api/admin/revoke',(req,res)=>{
   if(!adminAuth(req,res))return;
   const {code}=req.body;
   const codes=loadCodes();
   const idx=codes.findIndex(c=>c.code===code);
-  if(idx===-1) return res.json({ok:false,message:'找不到该激活码'});
+  if(idx===-1) return res.json({ok:false,message:'找不到该权益码'});
   codes.splice(idx,1); saveCodes(codes);
   res.json({ok:true});
 });
