@@ -138,6 +138,7 @@ tr:hover td{background:rgba(201,168,76,0.03)}
     <aside class="sidebar">
       <div class="side-group-label">运营管理</div>
       <button class="menu-btn on" data-admin-page="overview"><span class="menu-main"><span class="menu-icon">▦</span><span class="menu-text">数据总览</span></span></button>
+      <button class="menu-btn" data-admin-page="analytics"><span class="menu-main"><span class="menu-icon">◎</span><span class="menu-text">行为埋点</span></span><span class="menu-count" id="m-events">0</span></button>
       <button class="menu-btn" data-admin-page="codes"><span class="menu-main"><span class="menu-icon">◇</span><span class="menu-text">激活码管理</span></span><span class="menu-count" id="m-codes">0</span></button>
       <button class="menu-btn" data-admin-page="prompts"><span class="menu-main"><span class="menu-icon">✎</span><span class="menu-text">Prompt 模板</span></span><span class="menu-count" id="m-prompts">0</span></button>
       <div class="side-group-label">增长闭环</div>
@@ -172,6 +173,47 @@ tr:hover td{background:rgba(201,168,76,0.03)}
             <div class="placeholder-card"><div class="placeholder-title">用户画像</div><div class="placeholder-text">后续可统计生日资料完善率、问事类型分布、会员状态与复购路径。</div></div>
             <div class="placeholder-card"><div class="placeholder-title">转化漏斗</div><div class="placeholder-text">后续可追踪免费体验、报告解锁、会员激活、真人咨询的链路数据。</div></div>
             <div class="placeholder-card"><div class="placeholder-title">服务运营</div><div class="placeholder-text">后续承接老师咨询、报告状态、提醒任务和售后记录。</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-page" id="admin-page-analytics">
+        <div class="page-head">
+          <div>
+            <div class="page-title">行为埋点</div>
+            <div class="page-sub">验证会员、专题服务、提醒与报告沉淀的真实使用情况。当前统计最近 7 天事件。</div>
+          </div>
+          <button class="btn-sm" onclick="loadAnalytics()">刷新埋点</button>
+        </div>
+        <div class="section">
+          <div class="section-title">增长闭环指标</div>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-num" id="a-total">-</div><div class="stat-lbl">累计事件</div></div>
+            <div class="stat-card"><div class="stat-num" id="a-recent">-</div><div class="stat-lbl">7天事件</div></div>
+            <div class="stat-card"><div class="stat-num" id="a-users">-</div><div class="stat-lbl">7天设备估算</div></div>
+            <div class="stat-card"><div class="stat-num" id="a-member">-</div><div class="stat-lbl">会员开通</div></div>
+            <div class="stat-card"><div class="stat-num" id="a-report">-</div><div class="stat-lbl">报告保存</div></div>
+            <div class="stat-card"><div class="stat-num" id="a-reminder">-</div><div class="stat-lbl">提醒创建</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">转化漏斗</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>步骤</th><th>事件数</th><th>说明</th></tr></thead><tbody id="analytics-funnel"></tbody></table>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">模块与服务热度</div>
+          <div class="placeholder-grid">
+            <div class="placeholder-card"><div class="placeholder-title">模块热度</div><div class="placeholder-text" id="analytics-modules">暂无数据</div></div>
+            <div class="placeholder-card"><div class="placeholder-title">服务类型</div><div class="placeholder-text" id="analytics-services">暂无数据</div></div>
+            <div class="placeholder-card"><div class="placeholder-title">判断建议</div><div class="placeholder-text" id="analytics-advice">暂无数据</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">最近事件</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>时间</th><th>事件</th><th>属性</th></tr></thead><tbody id="analytics-latest"></tbody></table>
           </div>
         </div>
       </section>
@@ -274,10 +316,28 @@ tr:hover td{background:rgba(201,168,76,0.03)}
       </section>
 
       <section class="admin-page" id="admin-page-orders">
-        <div class="page-head"><div><div class="page-title">会员订单</div><div class="page-sub">规划中的套餐、会员、订单、退款和咨询服务管理。</div></div></div>
-        <div class="placeholder-grid">
-          <div class="placeholder-card"><div class="placeholder-title">套餐订单</div><div class="placeholder-text">未来可接入支付订单、套餐权益、激活码发放和核销记录。</div></div>
-          <div class="placeholder-card"><div class="placeholder-title">真人咨询</div><div class="placeholder-text">未来可管理咨询老师、预约状态、服务记录和售后处理。</div></div>
+        <div class="page-head">
+          <div><div class="page-title">会员订单</div><div class="page-sub">查看会员开通台账、有效期、剩余轻服务次数和来源。当前为 MVP 同步数据，后续可接真实支付订单。</div></div>
+          <button class="btn-sm" onclick="loadMemberships()">刷新会员</button>
+        </div>
+        <div class="section">
+          <div class="section-title">会员概览</div>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-num" id="ms-total">-</div><div class="stat-lbl">会员总数</div></div>
+            <div class="stat-card"><div class="stat-num" id="ms-active">-</div><div class="stat-lbl">有效会员</div></div>
+            <div class="stat-card"><div class="stat-num" id="ms-expired">-</div><div class="stat-lbl">已过期</div></div>
+            <div class="stat-card"><div class="stat-num" id="ms-light">-</div><div class="stat-lbl">剩余轻服务</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">会员列表</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>会员</th><th>套餐</th><th>状态</th><th>剩余天数</th><th>轻服务次数</th><th>来源</th><th>开通时间</th><th>到期时间</th><th>更新时间</th></tr></thead>
+              <tbody id="members-tbody"></tbody>
+            </table>
+            <div class="empty" id="members-empty" style="display:none">暂无会员记录</div>
+          </div>
         </div>
       </section>
 
@@ -325,6 +385,7 @@ tr:hover td{background:rgba(201,168,76,0.03)}
 var SECRET = '';
 var ALL_CODES = [];
 var ALL_PROMPTS = [];
+var ALL_MEMBERS = [];
 var MODEL_SETTINGS = null;
 var CURRENT_FILTER = 'all';
 var NEW_CODE_VAL = '';
@@ -379,6 +440,8 @@ function setAdminPage(page){
   if(page==='codes')renderTable();
   if(page==='prompts')loadPrompts();
   if(page==='settings')loadModelSettings();
+  if(page==='analytics')loadAnalytics();
+  if(page==='orders')loadMemberships();
 }
 
 document.querySelector('.sidebar').addEventListener('click',function(e){
@@ -396,6 +459,8 @@ function doLogin(){
       document.getElementById('login-view').style.display='none';
       document.getElementById('admin-view').style.display='block';
       renderData(d);
+      loadAnalytics();
+      loadMemberships();
       loadPrompts();
       loadModelSettings();
     })
@@ -408,6 +473,8 @@ function loadData(){
     .then(function(d){if(d.ok)renderData(d);});
   loadPrompts();
   loadModelSettings();
+  loadAnalytics();
+  loadMemberships();
 }
 
 function renderData(d){
@@ -423,6 +490,89 @@ function renderData(d){
   if(menuCount)menuCount.textContent=s.total||0;
   document.getElementById('last-refresh').textContent='更新于 '+new Date().toLocaleTimeString('zh');
   renderTable();
+}
+
+function loadAnalytics(){
+  if(!SECRET)return;
+  fetch('/api/admin/analytics?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok)renderAnalytics(d.analytics||{});});
+}
+
+function renderAnalytics(a){
+  var f=a.funnel||{};
+  document.getElementById('a-total').textContent=a.total_events||0;
+  document.getElementById('a-recent').textContent=a.recent_events||0;
+  document.getElementById('a-users').textContent=a.unique_ip_7d||0;
+  document.getElementById('a-member').textContent=f.membership_open||0;
+  document.getElementById('a-report').textContent=f.report_saved||0;
+  document.getElementById('a-reminder').textContent=f.reminder_created||0;
+  var menu=document.getElementById('m-events'); if(menu)menu.textContent=a.recent_events||0;
+  var rows=[
+    ['付费墙曝光', f.paywall_view||0, '用户看到会员/专题服务入口'],
+    ['选择套餐', f.plan_select||0, '用户点击会员或专题套餐'],
+    ['开通会员', f.membership_open||0, '会员实验转化'],
+    ['激活成功', f.activate_success||0, '激活码核销转化'],
+    ['开始分析', f.analysis_start||0, '用户进入服务流程'],
+    ['分析成功', f.analysis_success||0, '模型/算法返回结果'],
+    ['保存报告', f.report_saved||0, '形成报告资产'],
+    ['创建提醒', f.reminder_created||0, '形成留存钩子']
+  ];
+  document.getElementById('analytics-funnel').innerHTML=rows.map(function(r){
+    return '<tr><td>'+escHtml(r[0])+'</td><td style="color:var(--gold);font-weight:700">'+r[1]+'</td><td style="color:var(--ts)">'+escHtml(r[2])+'</td></tr>';
+  }).join('');
+  document.getElementById('analytics-modules').innerHTML=(a.topModules||[]).map(function(x){return escHtml(x.name)+'：<b style="color:var(--gold)">'+x.count+'</b>';}).join('<br>')||'暂无数据';
+  document.getElementById('analytics-services').innerHTML=(a.topServices||[]).map(function(x){return escHtml(x.name)+'：<b style="color:var(--gold)">'+x.count+'</b>';}).join('<br>')||'暂无数据';
+  var advice=[];
+  if((f.paywall_view||0)>0 && (f.membership_open||0)===0) advice.push('付费墙已有曝光但会员开通为0，需要检查会员权益文案或价格阻力。');
+  if((f.report_saved||0)>0 && (f.reminder_created||0)===0) advice.push('已有报告但没有提醒创建，结果页/报告中心的提醒入口需要更明显。');
+  if((f.analysis_start||0)>0 && (f.analysis_success||0)/(f.analysis_start||1)<0.7) advice.push('分析成功率偏低，需要检查模型稳定性或输入校验。');
+  if(!advice.length) advice.push('数据量还少，先继续观察会员开通、专题分析和提醒创建三条链路。');
+  document.getElementById('analytics-advice').innerHTML=advice.map(escHtml).join('<br>');
+  document.getElementById('analytics-latest').innerHTML=(a.latest||[]).slice(0,50).map(function(e){
+    return '<tr><td style="font-size:11px;color:var(--ts)">'+fmtDate(e.ts)+'</td><td>'+escHtml(e.name)+'</td><td style="font-size:11px;color:var(--td)">'+escHtml(JSON.stringify(e.props||{}).slice(0,180))+'</td></tr>';
+  }).join('') || '<tr><td colspan="3" class="empty">暂无事件</td></tr>';
+}
+
+function loadMemberships(){
+  if(!SECRET)return;
+  fetch('/api/admin/memberships?secret='+encodeURIComponent(SECRET))
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok)renderMemberships(d);});
+}
+
+function memberStatusTag(status){
+  return status==='active' ? '<span class="status-ok">✓ 有效</span>' : '<span class="status-pend">已过期</span>';
+}
+
+function renderMemberships(d){
+  ALL_MEMBERS=d.memberships||[];
+  var s=d.stats||{};
+  document.getElementById('ms-total').textContent=s.total||0;
+  document.getElementById('ms-active').textContent=s.active||0;
+  document.getElementById('ms-expired').textContent=s.expired||0;
+  document.getElementById('ms-light').textContent=s.light_credits_left||0;
+  var menu=document.querySelector('[data-admin-page="orders"] .menu-count');
+  if(menu)menu.textContent=s.active||0;
+  var tbody=document.getElementById('members-tbody');
+  var empty=document.getElementById('members-empty');
+  if(!tbody)return;
+  tbody.innerHTML='';
+  if(empty)empty.style.display=ALL_MEMBERS.length?'none':'block';
+  ALL_MEMBERS.forEach(function(m){
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><div style="font-family:monospace;color:var(--gold);font-size:12px">'+escHtml((m.local_id||m.id||'').slice(0,18))+'</div><div style="font-size:10px;color:var(--td)">'+escHtml(m.phone_mask||'未绑定账号')+'</div></td>'+
+      '<td>'+escHtml(m.name||m.plan||'-')+'</td>'+
+      '<td>'+memberStatusTag(m.status)+'</td>'+
+      '<td style="color:var(--gold);font-weight:700">'+(m.days_left||0)+'</td>'+
+      '<td>'+((m.light_credits||0))+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+escHtml(m.source||'-')+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+(m.started_at?fmtDate(m.started_at):'-')+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+(m.expires_at?fmtDate(m.expires_at):'-')+'</td>'+
+      '<td style="font-size:11px;color:var(--ts)">'+(m.updated_at?fmtDate(m.updated_at):'-')+'</td>';
+    tbody.appendChild(tr);
+  });
 }
 
 function setFilter(btn){

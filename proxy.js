@@ -17,6 +17,8 @@ const app       = express();
 const PROMPTS_FILE = path.join(__dirname, 'data', 'prompts.json');
 const MODEL_SETTINGS_FILE = path.join(__dirname, 'data', 'model-settings.json');
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
+const EVENTS_FILE = path.join(__dirname, 'data', 'events.jsonl');
+const MEMBERSHIPS_FILE = path.join(__dirname, 'data', 'memberships.json');
 const MODEL_OPTIONS = [
   {provider:'openrouter', model:'anthropic/claude-sonnet-4.6', name:'Claude Sonnet 4.6', recommended:['quick_ask','fengshui','dream','almanac','bazi','wealth','followup']},
   {provider:'openrouter', model:'anthropic/claude-opus-4.6', name:'Claude Opus 4.6', recommended:['bazi','wealth','followup']},
@@ -219,6 +221,37 @@ function saveModelSettings(settings){
   fs.writeFileSync(MODEL_SETTINGS_FILE, JSON.stringify(settings, null, 2), {encoding:'utf8', mode:0o600});
   try{ fs.chmodSync(MODEL_SETTINGS_FILE, 0o600); }catch(e){}
 }
+function safeEventValue(v, max){
+  return String(v == null ? '' : v).slice(0, max || 120);
+}
+function appendEvent(event){
+  ensureDataDir();
+  fs.appendFileSync(EVENTS_FILE, JSON.stringify(event) + '\n', 'utf8');
+}
+function readEvents(limit){
+  try{
+    if(!fs.existsSync(EVENTS_FILE)) return [];
+    const lines = fs.readFileSync(EVENTS_FILE, 'utf8').trim().split('\n').filter(Boolean);
+    return lines.slice(-(limit || 5000)).map(line => {
+      try{ return JSON.parse(line); }catch(e){ return null; }
+    }).filter(Boolean);
+  }catch(e){ return []; }
+}
+function loadMemberships(){
+  ensureDataDir();
+  try{
+    if(fs.existsSync(MEMBERSHIPS_FILE)){
+      const list = JSON.parse(fs.readFileSync(MEMBERSHIPS_FILE, 'utf8'));
+      return Array.isArray(list) ? list : [];
+    }
+  }catch(e){}
+  return [];
+}
+function saveMemberships(list){
+  ensureDataDir();
+  fs.writeFileSync(MEMBERSHIPS_FILE, JSON.stringify(list, null, 2), {encoding:'utf8', mode:0o600});
+  try{ fs.chmodSync(MEMBERSHIPS_FILE, 0o600); }catch(e){}
+}
 function maskKey(key){
   if(!key) return '';
   if(key.length <= 10) return key.slice(0,2)+'***'+key.slice(-2);
@@ -293,6 +326,7 @@ app.use('/api/activate',     express.json({ limit: '1kb' }));
 app.use('/api/use-credit',   express.json({ limit: '1kb' }));
 app.use('/api/admin',        express.json({ limit: '10kb' }));
 app.use('/api/auth',         express.json({ limit: '20kb' }));
+app.use('/api/event',        express.json({ limit: '8kb' }));
 app.use(express.json({ limit: '50mb' })); // 全局兜底
 
 // ═══ 安全：限流（防 DDoS 和 API 滥用） ═══
@@ -483,6 +517,65 @@ app.post('/api/auth/profile', requireUser, (req,res)=>{
 
 app.post('/api/auth/logout',(req,res)=>{
   res.json({ok:true});
+});
+
+app.post('/api/event',(req,res)=>{
+  try{
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const name = safeEventValue(body.name, 80);
+    if(!/^[a-zA-Z0-9_.:-]{2,80}$/.test(name)) return res.json({ok:false,message:'invalid event'});
+    const props = body.props && typeof body.props === 'object' ? body.props : {};
+    const cleanProps = {};
+    Object.keys(props).slice(0, 30).forEach(k => {
+      const key = safeEventValue(k, 40).replace(/[^\w.:-]/g, '');
+      if(!key) return;
+      const val = props[k];
+      cleanProps[key] = typeof val === 'number' || typeof val === 'boolean' ? val : safeEventValue(val, 240);
+    });
+    appendEvent({
+      id: crypto.randomUUID(),
+      name,
+      props: cleanProps,
+      ts: new Date().toISOString(),
+      path: safeEventValue(body.path || req.headers.referer || '', 200),
+      ua: safeEventValue(req.headers['user-agent'] || '', 160),
+      ip_hash: crypto.createHash('sha256').update(String(req.ip || '')).digest('hex').slice(0,16)
+    });
+    res.json({ok:true});
+  }catch(e){ res.json({ok:false}); }
+});
+
+app.post('/api/membership/sync',(req,res)=>{
+  try{
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const localId = safeEventValue(body.local_id || body.localId || '', 80) || crypto.randomUUID();
+    const plan = ['monthly','quarterly','yearly'].includes(body.plan) ? body.plan : 'monthly';
+    const nameMap = {monthly:'月会员', quarterly:'季会员', yearly:'年会员'};
+    const startedAt = body.startedAt && !Number.isNaN(Date.parse(body.startedAt)) ? new Date(body.startedAt).toISOString() : new Date().toISOString();
+    const expiresAt = body.expiresAt && !Number.isNaN(Date.parse(body.expiresAt)) ? new Date(body.expiresAt).toISOString() : new Date(Date.now()+30*86400000).toISOString();
+    const lightCredits = Math.max(0, Math.min(999, parseInt(body.lightCredits, 10) || 0));
+    const phone = safeEventValue(body.phone || '', 30);
+    const list = loadMemberships();
+    const now = new Date().toISOString();
+    let item = list.find(m => m.local_id === localId);
+    if(!item){
+      item = {id:crypto.randomUUID(), local_id:localId, created_at:now, source:'frontend_mvp'};
+      list.push(item);
+    }
+    Object.assign(item, {
+      plan,
+      name: nameMap[plan],
+      phone_mask: phone ? phone.replace(/^(\d{3})\d+(\d{4})$/, '$1****$2') : '',
+      started_at: startedAt,
+      expires_at: expiresAt,
+      light_credits: lightCredits,
+      status: new Date(expiresAt).getTime() > Date.now() ? 'active' : 'expired',
+      updated_at: now
+    });
+    saveMemberships(list);
+    appendEvent({id:crypto.randomUUID(), name:'membership_sync', props:{plan, light_credits:lightCredits}, ts:now, path:'/api/membership/sync', ua:safeEventValue(req.headers['user-agent']||'',160), ip_hash:crypto.createHash('sha256').update(String(req.ip||'')).digest('hex').slice(0,16)});
+    res.json({ok:true,membership:item});
+  }catch(e){ res.json({ok:false,message:'会员同步失败'}); }
 });
 
 // ═══ 安全：静态文件（禁止目录浏览，隐藏敏感文件） ═══
@@ -1375,6 +1468,78 @@ app.get('/api/admin/codes',(req,res)=>{
     total_credits_used:codes.reduce((s,c)=>s+(c.credits_used||0),0),
   };
   res.json({ok:true,codes,stats});
+});
+
+function buildAnalytics(){
+  const events = readEvents(8000);
+  const now = Date.now();
+  const dayMs = 24*60*60*1000;
+  const recent = events.filter(e => now - new Date(e.ts).getTime() <= 7*dayMs);
+  const counts = {};
+  const modules = {};
+  const serviceTypes = {};
+  const byDay = {};
+  recent.forEach(e => {
+    counts[e.name] = (counts[e.name]||0)+1;
+    const mod = e.props?.module || e.props?.target || e.props?.service || '';
+    if(mod) modules[mod] = (modules[mod]||0)+1;
+    const st = e.props?.service_type || e.props?.plan || '';
+    if(st) serviceTypes[st] = (serviceTypes[st]||0)+1;
+    const day = String(e.ts||'').slice(0,10);
+    byDay[day] = (byDay[day]||0)+1;
+  });
+  const funnel = {
+    paywall_view: counts.paywall_view || 0,
+    plan_select: counts.plan_select || 0,
+    membership_open: counts.membership_open || 0,
+    activate_success: counts.activate_success || 0,
+    analysis_start: counts.analysis_start || 0,
+    analysis_success: counts.analysis_success || 0,
+    report_saved: counts.report_saved || 0,
+    reminder_created: counts.reminder_created || 0
+  };
+  const topEvents = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([name,count])=>({name,count}));
+  const topModules = Object.entries(modules).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([name,count])=>({name,count}));
+  const topServices = Object.entries(serviceTypes).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([name,count])=>({name,count}));
+  return {
+    total_events: events.length,
+    recent_events: recent.length,
+    unique_ip_7d: new Set(recent.map(e=>e.ip_hash).filter(Boolean)).size,
+    funnel,
+    topEvents,
+    topModules,
+    topServices,
+    byDay: Object.entries(byDay).sort().map(([day,count])=>({day,count})),
+    latest: events.slice(-80).reverse()
+  };
+}
+
+app.get('/api/admin/analytics',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  res.json({ok:true,analytics:buildAnalytics()});
+});
+
+app.get('/api/admin/memberships',(req,res)=>{
+  if(!adminAuth(req,res))return;
+  const now = Date.now();
+  const memberships = loadMemberships().map(m => {
+    const expires = new Date(m.expires_at).getTime();
+    return {
+      ...m,
+      status: expires > now ? 'active' : 'expired',
+      days_left: Math.max(0, Math.ceil((expires - now)/86400000))
+    };
+  }).sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
+  const stats = {
+    total: memberships.length,
+    active: memberships.filter(m=>m.status==='active').length,
+    expired: memberships.filter(m=>m.status==='expired').length,
+    monthly: memberships.filter(m=>m.plan==='monthly').length,
+    quarterly: memberships.filter(m=>m.plan==='quarterly').length,
+    yearly: memberships.filter(m=>m.plan==='yearly').length,
+    light_credits_left: memberships.reduce((s,m)=>s+(parseInt(m.light_credits,10)||0),0)
+  };
+  res.json({ok:true,memberships,stats});
 });
 // Prompt 模板列表
 app.get('/api/admin/prompts',(req,res)=>{
